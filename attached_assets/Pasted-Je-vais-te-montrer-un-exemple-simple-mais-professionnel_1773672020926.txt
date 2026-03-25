@@ -1,0 +1,271 @@
+Je vais te montrer **un exemple simple mais professionnel d’un site agronomique** (site qui parle d’agriculture, cultures, conseils agricoles, etc.).
+Le site aura :
+
+* Une **page d’accueil**
+* Une **section sur les cultures**
+* Une **section conseils agricoles**
+* Une **section contact**
+* Un **design propre pour un site agronomique**
+
+Je te donne **HTML + CSS**.
+
+---
+
+# 1️⃣ Structure du site agronomique
+
+Le site contiendra :
+
+* **Header** → logo + menu
+* **Section Hero** → image agriculture
+* **Section cultures**
+* **Section conseils**
+* **Section contact**
+* **Footer**
+
+---
+
+# 2️⃣ Code HTML
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AgroTech - Agriculture Moderne</title>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+<h1>AgroTech</h1>
+
+<nav>
+<ul>
+<li><a href="#">Accueil</a></li>
+<li><a href="#">Cultures</a></li>
+<li><a href="#">Conseils</a></li>
+<li><a href="#">Contact</a></li>
+</ul>
+</nav>
+</header>
+
+
+<section class="hero">
+
+<h2>Agriculture Moderne et Durable</h2>
+
+<p>Découvrez les meilleures techniques agricoles pour améliorer vos récoltes.</p>
+
+<button>Découvrir</button>
+
+</section>
+
+
+<section class="cultures">
+
+<h2>Nos Cultures</h2>
+
+<div class="cards">
+
+<div class="card">
+<h3>Maïs</h3>
+<p>Le maïs est une culture importante pour l'alimentation et l'élevage.</p>
+</div>
+
+<div class="card">
+<h3>Haricot</h3>
+<p>Les haricots sont riches en protéines et faciles à cultiver.</p>
+</div>
+
+<div class="card">
+<h3>Manioc</h3>
+<p>Le manioc est une plante résistante adaptée aux climats tropicaux.</p>
+</div>
+
+</div>
+
+</section>
+
+
+<section class="conseils">
+
+<h2>Conseils Agricoles</h2>
+
+<p>Utilisez des semences de qualité, arrosez régulièrement et protégez vos cultures contre les maladies.</p>
+
+</section>
+
+
+<section class="contact">
+
+<h2>Contactez-nous</h2>
+
+<form>
+
+<input type="text" placeholder="Votre nom">
+
+<input type="email" placeholder="Votre email">
+
+<textarea placeholder="Votre message"></textarea>
+
+<button>Envoyer</button>
+
+</form>
+
+</section>
+
+
+<footer>
+
+<p>© 2026 AgroTech - Agriculture durable</p>
+
+</footer>
+
+</body>
+</html>
+```
+
+---
+
+# 3️⃣ Code CSS (style.css)
+
+```css
+body{
+font-family: Arial;
+margin:0;
+background:#f4f4f4;
+}
+
+header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:20px;
+background:#2e7d32;
+color:white;
+}
+
+nav ul{
+display:flex;
+list-style:none;
+}
+
+nav ul li{
+margin:10px;
+}
+
+nav a{
+color:white;
+text-decoration:none;
+font-weight:bold;
+}
+
+.hero{
+text-align:center;
+padding:100px;
+background: url("agriculture.jpg");
+background-size:cover;
+color:white;
+}
+
+.hero button{
+padding:10px 20px;
+border:none;
+background:#4caf50;
+color:white;
+font-size:18px;
+}
+
+.cultures{
+padding:50px;
+text-align:center;
+}
+
+.cards{
+display:flex;
+justify-content:center;
+gap:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+width:200px;
+border-radius:10px;
+box-shadow:0 5px 10px rgba(0,0,0,0.2);
+}
+
+.conseils{
+background:#e8f5e9;
+padding:40px;
+text-align:center;
+}
+
+.contact{
+padding:40px;
+text-align:center;
+}
+
+form{
+display:flex;
+flex-direction:column;
+width:300px;
+margin:auto;
+}
+
+input, textarea{
+margin:10px;
+padding:10px;
+}
+
+button{
+padding:10px;
+background:#2e7d32;
+color:white;
+border:none;
+}
+
+footer{
+background:#1b5e20;
+color:white;
+text-align:center;
+padding:20px;
+}
+```
+
+---
+
+# 4️⃣ Ce site contient
+
+✔ Menu de navigation
+✔ Présentation agriculture
+✔ Cultures agricoles
+✔ Conseils agricoles
+✔ Formulaire de contact
+
+---
+
+# 5️⃣ Pour rendre ce site **vraiment professionnel**, on peut ajouter :
+
+* **JavaScript**
+* **Base de données (MySQL)**
+* **React**
+* **Carte agricole**
+* **Météo agricole**
+* **Espace agriculteur**
+* **Système de vente des produits agricoles**
+
+---
+
+✅ Si tu veux, je peux aussi te montrer :
+
+* **un site agronomique ULTRA PROFESSIONNEL (comme une vraie startup agricole)**
+* **avec base de données**
+* **tableau de gestion des cultures**
+* **vente des produits agricoles**
+
+Je peux aussi te montrer **le projet complet comme un vrai développeur.** 🌱💻

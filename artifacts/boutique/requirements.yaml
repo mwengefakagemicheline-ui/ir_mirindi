@@ -1,0 +1,24 @@
+packages:
+  "framer-motion": "For smooth page transitions and elegant component reveals"
+  "react-hook-form": "For robust and clean form state management in checkout and admin"
+  "@hookform/resolvers": "To use Zod schemas with react-hook-form"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for merging tailwind classes safely"
+
+images:
+  - path: "artifacts/boutique/public/images/hero.png"
+    description: "Elegant, highly minimalist flat lay of premium desk accessories (a sleek modern phone, a brushed metal coffee tamper, a minimal keyboard) on a clean light beige or off-white background with soft, diffused natural lighting and crisp shadows. High-end editorial photography style."
+    aspect_ratio: "16:9"
+  - path: "artifacts/boutique/public/images/cat-phone.png"
+    description: "Minimalist close-up of a premium smartphone case and wireless charger on a clean white background, soft lighting, sophisticated."
+    aspect_ratio: "1:1"
+  - path: "artifacts/boutique/public/images/cat-computer.png"
+    description: "Minimalist close-up of a sleek mechanical keyboard and brushed aluminum mouse on a clean white background, soft lighting, professional."
+    aspect_ratio: "1:1"
+  - path: "artifacts/boutique/public/images/cat-coffee.png"
+    description: "Minimalist close-up of a premium stainless steel espresso portafilter and a modern matte ceramic cup on a clean white background, soft lighting."
+    aspect_ratio: "1:1"
+
+notes:
+  - Expecting API to be accessible at /api as per openapi.yaml
+  - React Query hooks are imported from @workspace/api-client-react
