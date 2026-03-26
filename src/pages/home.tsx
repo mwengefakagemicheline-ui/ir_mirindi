@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+Ôªøimport { Link } from "wouter";
 import { useListProducts, useListCategories } from "@/lib/api-client";
 import { ProductCard } from "@/components/product-card";
 import { CheckCircle2 } from "lucide-react";
@@ -6,24 +6,29 @@ import { motion } from "framer-motion";
 
 export function Home() {
   const { data: categoriesData, isLoading: loadingCats } = useListCategories();
-  const { data: productsData, isLoading: loadingProds } = useListProducts({ limit: 4, page: 1 });
+  const { data: productsData, isLoading: loadingProds } = useListProducts({
+    limit: 4,
+    page: 1,
+    featured: true,
+  });
+
+  const featuredCategories = (categoriesData || []).filter((category) => category.showOnHome).slice(0, 5);
 
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
+      transition: { staggerChildren: 0.1 },
+    },
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
   };
 
   return (
     <div className="pb-0">
-      {/* Hero Section */}
       <section className="relative min-h-[720px] h-[100vh] overflow-hidden bg-[#1a1714]">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(255,248,236,0.18),transparent_45%)]"></div>
@@ -50,14 +55,14 @@ export function Home() {
               >
                 Boutique premium
                 <span className="w-1.5 h-1.5 rounded-full bg-[#e9d9c3]"></span>
-                SÈlection 2026
+                S√©lection 2026
               </motion.div>
 
               <motion.h1
                 variants={itemVariants}
                 className="mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-semibold text-[#fff7ef] leading-[1.05]"
               >
-                Des accessoires qui ÈlËvent
+                Des accessoires qui √©l√®vent
                 <span className="block text-[#d9c7b1]">votre quotidien.</span>
               </motion.h1>
 
@@ -65,7 +70,7 @@ export function Home() {
                 variants={itemVariants}
                 className="mt-6 text-sm md:text-base text-[#f3e6d8]/95 max-w-2xl leading-relaxed"
               >
-                Design minimal, matÈriaux solides, compatibilitÈ parfaite. Tout ce qu'il faut pour un usage fluide, durable et ÈlÈgant.
+                Design minimal, mat√©riaux solides, compatibilit√© parfaite. Tout ce qu'il faut pour un usage fluide, durable et √©l√©gant.
               </motion.p>
 
               <motion.div variants={itemVariants} className="mt-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -73,13 +78,13 @@ export function Home() {
                   href="/catalog"
                   className="inline-flex items-center justify-center px-8 py-4 bg-[#fff1df] text-[#3a2f25] text-xs tracking-widest uppercase font-semibold rounded-full hover:bg-[#fff7ef] transition-colors duration-300"
                 >
-                  DÈcouvrir le catalogue
+                  D√©couvrir le catalogue
                 </Link>
                 <Link
                   href="/catalog?sort=newest"
                   className="inline-flex items-center justify-center px-8 py-4 bg-transparent border border-[#ead6be]/70 text-[#fff1df] text-xs tracking-widest uppercase font-semibold rounded-full hover:bg-white/15 transition-colors duration-300"
                 >
-                  Voir les nouveautÈs
+                  Voir les nouveaut√©s
                 </Link>
               </motion.div>
 
@@ -88,14 +93,13 @@ export function Home() {
                 className="mt-10 flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-widest text-[#ead6be]"
               >
                 <span className="px-3 py-2 rounded-full bg-white/15 border border-white/15">Livraison 48h</span>
-                <span className="px-3 py-2 rounded-full bg-white/15 border border-white/15">Paiement sÈcurisÈ</span>
+                <span className="px-3 py-2 rounded-full bg-white/15 border border-white/15">Paiement s√©curis√©</span>
                 <span className="px-3 py-2 rounded-full bg-white/15 border border-white/15">Retours 30 jours</span>
               </motion.div>
             </div>
           </motion.div>
         </div>
 
-        {/* Stats bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -106,7 +110,7 @@ export function Home() {
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-xs tracking-widest uppercase text-[#f3e6d8] font-medium">
               <span>20+ Produits</span>
               <span className="hidden sm:inline w-1 h-1 rounded-full bg-white/50"></span>
-              <span>5 CatÈgories</span>
+              <span>5 Cat√©gories</span>
               <span className="hidden sm:inline w-1 h-1 rounded-full bg-white/50"></span>
               <span>Livraison express</span>
             </div>
@@ -114,7 +118,6 @@ export function Home() {
         </motion.div>
       </section>
 
-      {/* Categories Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="flex items-center gap-4 mb-16">
           <h2 className="text-3xl font-display font-medium text-zinc-900 uppercase tracking-wider">Nos univers</h2>
@@ -127,10 +130,14 @@ export function Home() {
               <div key={n} className="animate-pulse bg-zinc-200 rounded-xl aspect-[3/4]"></div>
             ))}
           </div>
-        ) : (
+        ) : featuredCategories.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            {(categoriesData || []).slice(0, 5).map((cat) => (
-              <Link key={cat.id} href={`/catalog?category=${cat.slug}`} className="group block relative overflow-hidden rounded-xl aspect-[3/4] bg-zinc-100 shadow-sm hover:shadow-xl transition-all duration-500">
+            {featuredCategories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/catalog?category=${cat.slug}`}
+                className="group block relative overflow-hidden rounded-xl aspect-[3/4] bg-zinc-100 shadow-sm hover:shadow-xl transition-all duration-500"
+              >
                 {cat.imageUrl ? (
                   <img
                     src={cat.imageUrl}
@@ -150,10 +157,13 @@ export function Home() {
               </Link>
             ))}
           </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-12 text-center text-sm text-zinc-500">
+            Aucune cat√©gorie n'est activ√©e pour l'accueil. Activez-les depuis l'administration.
+          </div>
         )}
       </section>
 
-      {/* Promo Banner */}
       <section className="bg-zinc-900 py-10 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-8 md:gap-16 text-white text-sm tracking-wider uppercase font-medium">
@@ -173,7 +183,6 @@ export function Home() {
         </div>
       </section>
 
-      {/* Featured Products */}
       <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 overflow-hidden">
         <div className="absolute top-10 left-1/2 -translate-x-1/2 text-[200px] font-display font-bold text-zinc-50 select-none z-0 leading-none">
           01
@@ -181,7 +190,7 @@ export function Home() {
 
         <div className="relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-display font-medium text-zinc-900 mb-4">SÈlection du moment</h2>
+            <h2 className="text-3xl font-display font-medium text-zinc-900 mb-4">S√©lection du moment</h2>
             <div className="w-16 h-px bg-zinc-300 mx-auto"></div>
           </div>
 
@@ -195,11 +204,15 @@ export function Home() {
                 </div>
               ))}
             </div>
-          ) : (
+          ) : productsData?.products?.length ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-              {productsData?.products?.map((product) => (
+              {productsData.products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-12 text-center text-sm text-zinc-500">
+              Aucun produit n'est activ√© pour la s√©lection du moment. Activez-les depuis l'administration.
             </div>
           )}
 

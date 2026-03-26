@@ -8,6 +8,7 @@ export type Category = {
   description?: string | null;
   imageUrl?: string | null;
   productCount?: number;
+  showOnHome: boolean;
 };
 
 export type Product = {
@@ -79,6 +80,7 @@ function mapCategory(row: any): Category {
     slug: row.slug,
     description: row.description ?? null,
     imageUrl: row.image_url ?? null,
+    showOnHome: !!row.show_on_home,
   };
 }
 
@@ -88,11 +90,27 @@ export function useListCategories() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
-        .select("id, name, slug, description, image_url")
+        .select("id, name, slug, description, image_url, show_on_home")
         .order("name");
 
       if (error) throw error;
       return data.map(mapCategory);
+    },
+  });
+}
+
+export function useUpdateCategoryVisibility() {
+  return useMutation({
+    mutationFn: async (payload: { id: string; showOnHome: boolean }) => {
+      const { data, error } = await supabase
+        .from("categories")
+        .update({ show_on_home: payload.showOnHome })
+        .eq("id", payload.id)
+        .select("id, name, slug, description, image_url, show_on_home")
+        .single();
+
+      if (error) throw error;
+      return mapCategory(data);
     },
   });
 }
@@ -102,6 +120,7 @@ export function useListProducts(params?: {
   search?: string;
   limit?: number;
   page?: number;
+  featured?: boolean;
 }) {
   return useQuery({
     queryKey: ["products", params],
@@ -135,6 +154,10 @@ export function useListProducts(params?: {
 
       if (categoryId) {
         query = query.eq("category_id", categoryId);
+      }
+
+      if (params?.featured) {
+        query = query.eq("is_featured", true);
       }
 
       if (params?.search) {
@@ -183,6 +206,7 @@ export function useCreateProduct() {
         description?: string;
         imageUrl?: string;
         brand?: string;
+        isFeatured?: boolean;
       };
     }) => {
       const { data, error } = await supabase
@@ -197,7 +221,7 @@ export function useCreateProduct() {
           brand: payload.data.brand ?? null,
           slug: payload.data.name.toLowerCase().replace(/\s+/g, "-") + "-" + Date.now(),
           sku: "SKU-" + Date.now(),
-          is_featured: false,
+          is_featured: !!payload.data.isFeatured,
           is_new: true,
         })
         .select()
@@ -221,6 +245,7 @@ export function useUpdateProduct() {
         description?: string;
         imageUrl?: string;
         brand?: string;
+        isFeatured?: boolean;
       };
     }) => {
       const { data, error } = await supabase
@@ -233,6 +258,26 @@ export function useUpdateProduct() {
           description: payload.data.description ?? "",
           image_url: payload.data.imageUrl ?? null,
           brand: payload.data.brand ?? null,
+          is_featured: !!payload.data.isFeatured,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", payload.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return mapProduct(data);
+    },
+  });
+}
+
+export function useToggleProductFeatured() {
+  return useMutation({
+    mutationFn: async (payload: { id: string; isFeatured: boolean }) => {
+      const { data, error } = await supabase
+        .from("products")
+        .update({
+          is_featured: payload.isFeatured,
           updated_at: new Date().toISOString(),
         })
         .eq("id", payload.id)
@@ -379,5 +424,37 @@ export function useGetOrder(orderId?: string) {
   });
 }
 
+export type AdminOrder = {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  status: string;
+  total: number;
+  createdAt: string;
+  itemsCount: number;
+};
 
+export function useListOrders(limit: number = 12) {
+  return useQuery({
+    queryKey: ["admin-orders", limit],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, customer_name, customer_email, status, total, created_at, order_items(id)")
+        .order("created_at", { ascending: false })
+        .limit(limit);
 
+      if (error) throw error;
+
+      return (data ?? []).map((row: any) => ({
+        id: row.id,
+        customerName: row.customer_name,
+        customerEmail: row.customer_email,
+        status: row.status,
+        total: Number(row.total),
+        createdAt: row.created_at,
+        itemsCount: Array.isArray(row.order_items) ? row.order_items.length : 0,
+      })) satisfies AdminOrder[];
+    },
+  });
+}
