@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useListProducts, useListCategories } from "@/lib/api-client";
 import { ProductCard } from "@/components/product-card";
 import { Search, Filter, ChevronDown, X } from "lucide-react";
@@ -26,7 +26,7 @@ export function Catalog() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12 md:pt-28">
       <div className="mb-12">
         <h1 className="text-3xl font-display font-medium text-zinc-900 mb-4">
           {category ? categories?.find((c) => c.slug === category)?.name || "Catalogue" : "Tout le Catalogue"}
@@ -128,15 +128,15 @@ export function Catalog() {
               <div className="space-y-4">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className="w-4 h-4 rounded border border-zinc-300 flex items-center justify-center group-hover:border-zinc-900 transition-colors"></div>
-                  <span className="text-[13px] text-zinc-600 group-hover:text-zinc-900 transition-colors">Moins de 50 EUR</span>
+                  <span className="text-[13px] text-zinc-600 group-hover:text-zinc-900 transition-colors">Moins de 50 $</span>
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className="w-4 h-4 rounded border border-zinc-300 flex items-center justify-center group-hover:border-zinc-900 transition-colors"></div>
-                  <span className="text-[13px] text-zinc-600 group-hover:text-zinc-900 transition-colors">50 EUR - 150 EUR</span>
+                  <span className="text-[13px] text-zinc-600 group-hover:text-zinc-900 transition-colors">50 $ - 150 $</span>
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className="w-4 h-4 rounded border border-zinc-300 flex items-center justify-center group-hover:border-zinc-900 transition-colors"></div>
-                  <span className="text-[13px] text-zinc-600 group-hover:text-zinc-900 transition-colors">Plus de 150 EUR</span>
+                  <span className="text-[13px] text-zinc-600 group-hover:text-zinc-900 transition-colors">Plus de 150 $</span>
                 </label>
               </div>
             </div>
@@ -192,3 +192,5 @@ export function Catalog() {
     </div>
   );
 }
+
+

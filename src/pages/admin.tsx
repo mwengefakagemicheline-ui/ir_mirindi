@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   useListProducts,
   useCreateProduct,
@@ -8,9 +8,16 @@ import {
   useListOrders,
   useUpdateCategoryVisibility,
   useToggleProductFeatured,
+  useAgriculturalContactSettings,
+  useUpsertAgriculturalContactSettings,
+  useAgriculturalPortfolioItems,
+  useUpdateAgriculturalPortfolioItem,
+  useListAgriculturalInquiries,
+  useDeleteAgriculturalInquiry,
+  type AgriculturalPortfolioItem,
 } from "@/lib/api-client";
 import { formatPrice, cn } from "@/lib/utils";
-import { Edit2, Trash2, Plus, X, Image as ImageIcon, Package, Tags, Boxes, ShoppingCart } from "lucide-react";
+import { Edit2, Trash2, Plus, X, Image as ImageIcon, Package, Tags, Boxes, ShoppingCart, Save } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,12 +33,28 @@ const productSchema = z.object({
   categoryId: z.string().min(1, "Requis"),
   stock: z.coerce.number().min(0, "Requis"),
   description: z.string().optional(),
-  imageUrl: z.string().url("URL invalide").optional().or(z.literal("")),
+  imageUrl: z
+    .string()
+    .trim()
+    .refine((value) => value === "" || value.startsWith("/") || /^https?:\/\//i.test(value), {
+      message: "Entrez une URL web ou un chemin local commençant par /",
+    })
+    .optional(),
   brand: z.string().optional(),
   isFeatured: z.boolean().default(false),
 });
 
+const agriculturalContactSchema = z.object({
+  locationLabel: z.string().min(2, "Requis"),
+  locationValue: z.string().min(5, "Requis"),
+  phoneLabel: z.string().min(2, "Requis"),
+  phoneValue: z.string().min(5, "Requis"),
+  emailLabel: z.string().min(2, "Requis"),
+  emailValue: z.string().email("Email invalide"),
+});
+
 type ProductForm = z.infer<typeof productSchema>;
+type AgriculturalContactForm = z.infer<typeof agriculturalContactSchema>;
 
 type DashboardProduct = {
   id: string;
@@ -54,6 +77,17 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function tipsToText(tips: string[]) {
+  return tips.join("\n");
+}
+
+function textToTips(value: string) {
+  return value
+    .split("\n")
+    .map((tip) => tip.trim())
+    .filter(Boolean);
+}
+
 export function Admin() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
@@ -61,17 +95,35 @@ export function Admin() {
   const { data: productsData, isLoading } = useListProducts({ limit: 100 });
   const { data: categories, isLoading: loadingCategories } = useListCategories();
   const { data: orders, isLoading: loadingOrders } = useListOrders(8);
+  const { data: agriculturalContactSettings, isLoading: loadingAgriculturalContact } = useAgriculturalContactSettings();
+  const { data: agriculturalPortfolioItems, isLoading: loadingAgriculturalPortfolio } = useAgriculturalPortfolioItems();
+  const { data: agriculturalInquiries, isLoading: loadingAgriculturalInquiries } = useListAgriculturalInquiries(12);
 
   const createProd = useCreateProduct();
   const updateProd = useUpdateProduct();
   const deleteProd = useDeleteProduct();
   const updateCategoryVisibility = useUpdateCategoryVisibility();
   const toggleProductFeatured = useToggleProductFeatured();
+  const upsertAgriculturalContactSettings = useUpsertAgriculturalContactSettings();
+  const updateAgriculturalPortfolioItem = useUpdateAgriculturalPortfolioItem();
+  const deleteAgriculturalInquiry = useDeleteAgriculturalInquiry();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pendingCategoryId, setPendingCategoryId] = useState<string | null>(null);
   const [pendingProductId, setPendingProductId] = useState<string | null>(null);
+  const [portfolioDrafts, setPortfolioDrafts] = useState<Record<string, AgriculturalPortfolioItem>>({});
+  const [pendingPortfolioId, setPendingPortfolioId] = useState<string | null>(null);
+  const [pendingInquiryId, setPendingInquiryId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!agriculturalPortfolioItems) return;
+    const nextDrafts = agriculturalPortfolioItems.reduce<Record<string, AgriculturalPortfolioItem>>((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {});
+    setPortfolioDrafts(nextDrafts);
+  }, [agriculturalPortfolioItems]);
 
   const {
     register,
@@ -85,6 +137,16 @@ export function Admin() {
       stock: 10,
       isFeatured: false,
     },
+  });
+
+  const {
+    register: registerAgriculturalContact,
+    handleSubmit: handleSubmitAgriculturalContact,
+    reset: resetAgriculturalContact,
+    formState: { errors: agriculturalContactErrors },
+  } = useForm<AgriculturalContactForm>({
+    resolver: zodResolver(agriculturalContactSchema),
+    values: agriculturalContactSettings,
   });
 
   const stats = useMemo(() => {
@@ -107,16 +169,7 @@ export function Admin() {
 
   const openCreate = () => {
     setEditingId(null);
-    reset({
-      name: "",
-      price: 0,
-      categoryId: "",
-      stock: 10,
-      description: "",
-      imageUrl: "",
-      brand: "",
-      isFeatured: false,
-    });
+    reset({ name: "", price: 0, categoryId: "", stock: 10, description: "", imageUrl: "", brand: "", isFeatured: false });
     setIsModalOpen(true);
   };
 
@@ -137,11 +190,7 @@ export function Admin() {
 
   const onSubmit = async (data: ProductForm) => {
     try {
-      const payload = {
-        ...data,
-        imageUrl: data.imageUrl || undefined,
-      };
-
+      const payload = { ...data, imageUrl: data.imageUrl?.trim() || undefined };
       if (editingId) {
         await updateProd.mutateAsync({ id: editingId, data: payload });
         toast({ title: "Produit mis à jour" });
@@ -154,6 +203,43 @@ export function Admin() {
       setIsModalOpen(false);
     } catch {
       toast({ title: "Erreur", variant: "destructive" });
+    }
+  };
+
+  const onSubmitAgriculturalContact = async (data: AgriculturalContactForm) => {
+    try {
+      await upsertAgriculturalContactSettings.mutateAsync(data);
+      resetAgriculturalContact(data);
+      queryClient.invalidateQueries({ queryKey: ["agricultural-contact-settings"] });
+      toast({ title: "Coordonnées agricoles mises à jour" });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible d'enregistrer ces coordonnées.", variant: "destructive" });
+    }
+  };
+
+  const handlePortfolioChange = (id: string, field: keyof AgriculturalPortfolioItem, value: string | number | string[]) => {
+    setPortfolioDrafts((current) => ({
+      ...current,
+      [id]: {
+        ...current[id],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSavePortfolioItem = async (id: string) => {
+    const draft = portfolioDrafts[id];
+    if (!draft) return;
+
+    try {
+      setPendingPortfolioId(id);
+      await updateAgriculturalPortfolioItem.mutateAsync(draft);
+      queryClient.invalidateQueries({ queryKey: ["agricultural-portfolio-items"] });
+      toast({ title: "Carte agronomique mise à jour" });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible d'enregistrer cette carte.", variant: "destructive" });
+    } finally {
+      setPendingPortfolioId(null);
     }
   };
 
@@ -195,18 +281,27 @@ export function Admin() {
     }
   };
 
+  const handleDeleteAgriculturalInquiry = async (id: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce message ?")) return;
+
+    try {
+      setPendingInquiryId(id);
+      await deleteAgriculturalInquiry.mutateAsync({ id });
+      queryClient.invalidateQueries({ queryKey: ["agricultural-inquiries"] });
+      toast({ title: "Message supprimé" });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de supprimer ce message.", variant: "destructive" });
+    } finally {
+      setPendingInquiryId(null);
+    }
+  };
+
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
-
     if (error) {
-      toast({
-        title: "Erreur",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
       return;
     }
-
     toast({ title: "Déconnexion réussie" });
     setLocation("/admin/login");
   };
@@ -229,18 +324,8 @@ export function Admin() {
           {user?.email && <p className="text-xs uppercase tracking-[0.18em] text-zinc-400 mt-3">Connecté en tant que {user.email}</p>}
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleSignOut}
-            className="bg-white text-zinc-700 px-5 py-2.5 rounded-lg text-sm font-medium border border-zinc-200 hover:bg-zinc-50 transition-colors shadow-sm"
-          >
-            Déconnexion
-          </button>
-          <button
-            onClick={openCreate}
-            className="bg-zinc-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-zinc-800 transition-colors shadow-sm"
-          >
-            <Plus className="w-4 h-4" /> Nouveau produit
-          </button>
+          <button onClick={handleSignOut} className="bg-white text-zinc-700 px-5 py-2.5 rounded-lg text-sm font-medium border border-zinc-200 hover:bg-zinc-50 transition-colors shadow-sm">Déconnexion</button>
+          <button onClick={openCreate} className="bg-zinc-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-zinc-800 transition-colors shadow-sm"><Plus className="w-4 h-4" /> Nouveau produit</button>
         </div>
       </div>
 
@@ -249,12 +334,7 @@ export function Admin() {
           const Icon = card.icon;
           return (
             <div key={card.label} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-              <div className="flex items-center justify-between mb-5">
-                <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">{card.label}</span>
-                <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-700">
-                  <Icon className="w-4 h-4" />
-                </div>
-              </div>
+              <div className="flex items-center justify-between mb-5"><span className="text-xs uppercase tracking-[0.2em] text-zinc-500">{card.label}</span><div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-700"><Icon className="w-4 h-4" /></div></div>
               <p className="text-3xl font-display font-medium text-zinc-900">{card.value}</p>
             </div>
           );
@@ -263,268 +343,73 @@ export function Admin() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.02)] overflow-hidden">
-          <div className="px-6 py-5 border-b border-zinc-100 flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-display font-medium text-zinc-900">Accueil: catégories</h2>
-              <p className="text-sm text-zinc-500 mt-1">Cochez les catégories à afficher dans “Nos univers”.</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Actives</p>
-              <p className="text-sm font-medium text-zinc-900">{stats.homeCategories}</p>
-            </div>
-          </div>
+          <div className="px-6 py-5 border-b border-zinc-100 flex items-center justify-between gap-4"><div><h2 className="text-lg font-display font-medium text-zinc-900">Accueil: catégories</h2><p className="text-sm text-zinc-500 mt-1">Cochez les catégories à afficher dans “Nos univers”.</p></div><div className="text-right"><p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Actives</p><p className="text-sm font-medium text-zinc-900">{stats.homeCategories}</p></div></div>
           <div className="divide-y divide-zinc-100">
-            {loadingCategories ? (
-              <p className="px-6 py-8 text-sm text-zinc-500">Chargement...</p>
-            ) : categories && categories.length > 0 ? (
-              categories.map((category) => (
-                <label key={category.id} className="px-6 py-4 flex items-center justify-between gap-4 cursor-pointer hover:bg-zinc-50/70 transition-colors">
-                  <div>
-                    <p className="text-sm font-medium text-zinc-900">{category.name}</p>
-                    <p className="text-xs text-zinc-500 mt-1">/{category.slug}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={cn("text-xs font-medium", category.showOnHome ? "text-green-600" : "text-zinc-400")}>Accueil</span>
-                    <input
-                      type="checkbox"
-                      className="h-5 w-5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
-                      checked={category.showOnHome}
-                      disabled={pendingCategoryId === category.id}
-                      onChange={(event) => handleCategoryToggle(category.id, event.target.checked)}
-                    />
-                  </div>
-                </label>
-              ))
-            ) : (
-              <p className="px-6 py-8 text-sm text-zinc-500">Aucune catégorie disponible.</p>
-            )}
+            {loadingCategories ? <p className="px-6 py-8 text-sm text-zinc-500">Chargement...</p> : categories && categories.length > 0 ? categories.map((category) => (
+              <label key={category.id} className="px-6 py-4 flex items-center justify-between gap-4 cursor-pointer hover:bg-zinc-50/70 transition-colors"><div><p className="text-sm font-medium text-zinc-900">{category.name}</p><p className="text-xs text-zinc-500 mt-1">/{category.slug}</p></div><div className="flex items-center gap-3"><span className={cn("text-xs font-medium", category.showOnHome ? "text-green-600" : "text-zinc-400")}>Accueil</span><input type="checkbox" className="h-5 w-5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900" checked={category.showOnHome} disabled={pendingCategoryId === category.id} onChange={(event) => handleCategoryToggle(category.id, event.target.checked)} /></div></label>
+            )) : <p className="px-6 py-8 text-sm text-zinc-500">Aucune catégorie disponible.</p>}
           </div>
         </div>
 
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.02)] overflow-hidden">
-            <div className="px-6 py-5 border-b border-zinc-100">
-              <h2 className="text-lg font-display font-medium text-zinc-900">Commandes récentes</h2>
-              <p className="text-sm text-zinc-500 mt-1">Les dernières commandes enregistrées dans Supabase.</p>
-            </div>
+            <div className="px-6 py-5 border-b border-zinc-100"><h2 className="text-lg font-display font-medium text-zinc-900">Commandes récentes</h2><p className="text-sm text-zinc-500 mt-1">Les dernières commandes enregistrées dans Supabase.</p></div>
             <div className="divide-y divide-zinc-100">
-              {loadingOrders ? (
-                <p className="px-6 py-8 text-sm text-zinc-500">Chargement...</p>
-              ) : orders && orders.length > 0 ? (
-                orders.map((order) => (
-                  <div key={order.id} className="px-6 py-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-zinc-900">{order.customerName}</p>
-                        <p className="text-xs text-zinc-500 mt-1">{order.customerEmail}</p>
-                        <p className="text-xs text-zinc-400 mt-2">#{order.id.slice(0, 8)} • {order.itemsCount} article(s)</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-zinc-900">{formatPrice(order.total)}</p>
-                        <p className="text-xs uppercase tracking-[0.14em] text-zinc-400 mt-1">{order.status}</p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-zinc-400 mt-3">{formatDate(order.createdAt)}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="px-6 py-8 text-sm text-zinc-500">Aucune commande pour le moment.</p>
-              )}
+              {loadingOrders ? <p className="px-6 py-8 text-sm text-zinc-500">Chargement...</p> : orders && orders.length > 0 ? orders.map((order) => (
+                <div key={order.id} className="px-6 py-4"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-zinc-900">{order.customerName}</p><p className="text-xs text-zinc-500 mt-1">{order.customerEmail}</p><p className="text-xs text-zinc-400 mt-2">#{order.id.slice(0, 8)} • {order.itemsCount} article(s)</p></div><div className="text-right"><p className="text-sm font-medium text-zinc-900">{formatPrice(order.total)}</p><p className="text-xs uppercase tracking-[0.14em] text-zinc-400 mt-1">{order.status}</p></div></div><p className="text-xs text-zinc-400 mt-3">{formatDate(order.createdAt)}</p></div>
+              )) : <p className="px-6 py-8 text-sm text-zinc-500">Aucune commande pour le moment.</p>}
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-6">
-            <h2 className="text-lg font-display font-medium text-zinc-900">Résumé rapide</h2>
-            <ul className="mt-4 space-y-3 text-sm text-zinc-600">
-              <li>{stats.products} produit(s) actuellement dans le catalogue.</li>
-              <li>{stats.categories} catégorie(s) disponibles pour la navigation.</li>
-              <li>{stats.homeCategories} catégorie(s) affichées sur l'accueil.</li>
-              <li>{stats.featuredProducts} produit(s) dans la sélection du moment.</li>
-              <li>{stats.lowStock} produit(s) à surveiller côté réassort.</li>
-            </ul>
+          <div className="bg-white rounded-2xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.02)] overflow-hidden">
+            <div className="px-6 py-5 border-b border-zinc-100"><h2 className="text-lg font-display font-medium text-zinc-900">Messages du site</h2><p className="text-sm text-zinc-500 mt-1">Demandes envoyées depuis le formulaire agricole.</p></div>
+            <div className="divide-y divide-zinc-100">
+              {loadingAgriculturalInquiries ? <p className="px-6 py-8 text-sm text-zinc-500">Chargement...</p> : agriculturalInquiries && agriculturalInquiries.length > 0 ? agriculturalInquiries.map((item) => (
+                <div key={item.id} className="px-6 py-4"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-zinc-900">{item.name}</p><p className="text-xs text-zinc-500 mt-1">{item.email}</p></div><div className="text-right"><p className="text-xs text-zinc-400">{formatDate(item.createdAt)}</p><button type="button" onClick={() => handleDeleteAgriculturalInquiry(item.id)} disabled={pendingInquiryId === item.id} className="mt-3 inline-flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">{pendingInquiryId === item.id ? "Suppression..." : "Supprimer"}</button></div></div><p className="text-sm text-zinc-600 mt-3 whitespace-pre-line">{item.message}</p></div>
+              )) : <p className="px-6 py-8 text-sm text-zinc-500">Aucun message reçu pour le moment.</p>}
+            </div>
           </div>
+
+          <div className="bg-white rounded-2xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-6"><h2 className="text-lg font-display font-medium text-zinc-900">Résumé rapide</h2><ul className="mt-4 space-y-3 text-sm text-zinc-600"><li>{stats.products} produit(s) actuellement dans le catalogue.</li><li>{stats.categories} catégorie(s) disponibles pour la navigation.</li><li>{stats.homeCategories} catégorie(s) affichées sur l'accueil.</li><li>{stats.featuredProducts} produit(s) dans la sélection du moment.</li><li>{stats.lowStock} produit(s) à surveiller côté réassort.</li></ul></div>
         </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-6"><div><h2 className="text-lg font-display font-medium text-zinc-900">Portefeuille agronomique</h2><p className="text-sm text-zinc-500 mt-1">Modifiez ici les cartes, images, saisons et conseils affichés sur la page agricole.</p></div></div>
+        {loadingAgriculturalPortfolio ? <p className="text-sm text-zinc-500">Chargement...</p> : <div className="space-y-6">{agriculturalPortfolioItems?.map((item, index) => {
+          const draft = portfolioDrafts[item.id] ?? item;
+          return (
+            <div key={item.id} className="rounded-2xl border border-zinc-200 p-5 bg-zinc-50/60">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Nom</label><input value={draft.name} onChange={(e) => handlePortfolioChange(item.id, "name", e.target.value)} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10" /></div>
+                <div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Saison</label><input value={draft.season} onChange={(e) => handlePortfolioChange(item.id, "season", e.target.value)} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10" /></div>
+                <div className="md:col-span-2"><label className="block text-xs font-medium text-zinc-700 mb-1.5">Image URL</label><input value={draft.imageUrl} onChange={(e) => handlePortfolioChange(item.id, "imageUrl", e.target.value)} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10" /></div>
+                <div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Disposition</label><select value={draft.colSpan} onChange={(e) => handlePortfolioChange(item.id, "colSpan", e.target.value)} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10 bg-white"><option value="col-span-1 md:col-span-2">Petite carte</option><option value="col-span-1 md:col-span-3">Moyenne carte</option><option value="col-span-1 md:col-span-4">Grande carte</option></select></div>
+                <div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Ordre</label><input type="number" value={draft.sortOrder} onChange={(e) => handlePortfolioChange(item.id, "sortOrder", Number(e.target.value))} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10" /></div>
+                <div className="md:col-span-2"><label className="block text-xs font-medium text-zinc-700 mb-1.5">Conseils (une ligne = un conseil)</label><textarea rows={4} value={tipsToText(draft.tips)} onChange={(e) => handlePortfolioChange(item.id, "tips", textToTips(e.target.value))} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10 resize-y" /></div>
+                <div className="md:col-span-2 flex items-center justify-between gap-4"><p className="text-xs text-zinc-500">Carte {index + 1}</p><button type="button" onClick={() => handleSavePortfolioItem(item.id)} disabled={pendingPortfolioId === item.id} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-zinc-900 rounded-lg hover:bg-zinc-800 disabled:opacity-50"><Save className="w-4 h-4" />{pendingPortfolioId === item.id ? "Enregistrement..." : "Enregistrer cette carte"}</button></div>
+              </div>
+            </div>
+          );
+        })}</div>}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-6"><div><h2 className="text-lg font-display font-medium text-zinc-900">Coordonnées page agricole</h2><p className="text-sm text-zinc-500 mt-1">Ces informations s'affichent sur la page agricole et sont modifiables par l'admin.</p></div></div>
+        {loadingAgriculturalContact ? <p className="text-sm text-zinc-500">Chargement...</p> : <form onSubmit={handleSubmitAgriculturalContact(onSubmitAgriculturalContact)} className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Libellé adresse</label><input {...registerAgriculturalContact("locationLabel")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10" />{agriculturalContactErrors.locationLabel && <p className="text-red-500 text-xs mt-1">{agriculturalContactErrors.locationLabel.message}</p>}</div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Adresse</label><input {...registerAgriculturalContact("locationValue")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10" />{agriculturalContactErrors.locationValue && <p className="text-red-500 text-xs mt-1">{agriculturalContactErrors.locationValue.message}</p>}</div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Libellé téléphone</label><input {...registerAgriculturalContact("phoneLabel")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10" />{agriculturalContactErrors.phoneLabel && <p className="text-red-500 text-xs mt-1">{agriculturalContactErrors.phoneLabel.message}</p>}</div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Téléphone</label><input {...registerAgriculturalContact("phoneValue")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10" />{agriculturalContactErrors.phoneValue && <p className="text-red-500 text-xs mt-1">{agriculturalContactErrors.phoneValue.message}</p>}</div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Libellé email</label><input {...registerAgriculturalContact("emailLabel")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10" />{agriculturalContactErrors.emailLabel && <p className="text-red-500 text-xs mt-1">{agriculturalContactErrors.emailLabel.message}</p>}</div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Email</label><input {...registerAgriculturalContact("emailValue")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10" />{agriculturalContactErrors.emailValue && <p className="text-red-500 text-xs mt-1">{agriculturalContactErrors.emailValue.message}</p>}</div><div className="md:col-span-2 flex justify-end"><button type="submit" disabled={upsertAgriculturalContactSettings.isPending} className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 rounded-lg shadow-sm hover:bg-zinc-800 transition-colors disabled:opacity-50"><Save className="w-4 h-4" />{upsertAgriculturalContactSettings.isPending ? "Enregistrement..." : "Enregistrer les coordonnées"}</button></div></form>}
       </div>
 
       <div className="bg-white rounded-2xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.02)] overflow-hidden">
-        <div className="px-6 py-5 border-b border-zinc-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-display font-medium text-zinc-900">Catalogue produits</h2>
-            <p className="text-sm text-zinc-500 mt-1">Activez ici les produits à faire remonter dans “Sélection du moment”.</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Stock faible</p>
-            <p className="text-sm font-medium text-amber-600">{stats.lowStock} produit(s)</p>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-zinc-50 text-xs tracking-widest uppercase text-zinc-500 font-medium">
-              <tr>
-                <th className="px-6 py-4">Produit</th>
-                <th className="px-6 py-4">Catégorie</th>
-                <th className="px-6 py-4">Prix</th>
-                <th className="px-6 py-4">Stock</th>
-                <th className="px-6 py-4">Sélection</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-zinc-500">Chargement...</td>
-                </tr>
-              ) : (
-                productsData?.products.map((product) => (
-                  <tr key={product.id} className="hover:bg-zinc-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded bg-zinc-100 overflow-hidden flex items-center justify-center flex-shrink-0 border border-zinc-200/60">
-                          {product.imageUrl ? (
-                            <img src={product.imageUrl} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <ImageIcon className="w-4 h-4 text-zinc-300" />
-                          )}
-                        </div>
-                        <div>
-                          <span className="font-medium text-zinc-900 block">{product.name}</span>
-                          <span className="text-xs text-zinc-400">{product.brand || product.sku}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-zinc-600">{product.categoryName}</td>
-                    <td className="px-6 py-4 font-medium">{formatPrice(product.price)}</td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={cn(
-                          "px-2 py-1 rounded-full text-[10px] font-medium tracking-wider uppercase",
-                          product.stock > 10
-                            ? "bg-green-100 text-green-700"
-                            : product.stock > 0
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-red-100 text-red-700"
-                        )}
-                      >
-                        {product.stock}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <label className="inline-flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="h-5 w-5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
-                          checked={product.isFeatured}
-                          disabled={pendingProductId === product.id}
-                          onChange={(event) => handleProductFeaturedToggle(product.id, event.target.checked)}
-                        />
-                        <span className={cn("text-xs font-medium", product.isFeatured ? "text-green-600" : "text-zinc-400")}>
-                          {product.isFeatured ? "Activé" : "Inactif"}
-                        </span>
-                      </label>
-                    </td>
-                    <td className="px-6 py-4 text-right space-x-2">
-                      <button
-                        onClick={() => openEdit(product)}
-                        className="p-2 text-zinc-400 hover:text-zinc-900 transition-colors bg-white rounded-md shadow-sm border border-zinc-200"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product.id)}
-                        className="p-2 text-zinc-400 hover:text-red-500 transition-colors bg-white rounded-md shadow-sm border border-zinc-200"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <div className="px-6 py-5 border-b border-zinc-100 flex items-center justify-between"><div><h2 className="text-lg font-display font-medium text-zinc-900">Catalogue produits</h2><p className="text-sm text-zinc-500 mt-1">Activez ici les produits à faire remonter dans “Sélection du moment”.</p></div><div className="text-right"><p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Stock faible</p><p className="text-sm font-medium text-amber-600">{stats.lowStock} produit(s)</p></div></div>
+        <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-zinc-50 text-xs tracking-widest uppercase text-zinc-500 font-medium"><tr><th className="px-6 py-4">Produit</th><th className="px-6 py-4">Catégorie</th><th className="px-6 py-4">Prix</th><th className="px-6 py-4">Stock</th><th className="px-6 py-4">Sélection</th><th className="px-6 py-4 text-right">Actions</th></tr></thead><tbody className="divide-y divide-zinc-100">{isLoading ? <tr><td colSpan={6} className="px-6 py-8 text-center text-zinc-500">Chargement...</td></tr> : productsData?.products.map((product) => (<tr key={product.id} className="hover:bg-zinc-50/50 transition-colors"><td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded bg-zinc-100 overflow-hidden flex items-center justify-center flex-shrink-0 border border-zinc-200/60">{product.imageUrl ? <img src={product.imageUrl} alt="" className="w-full h-full object-cover" /> : <ImageIcon className="w-4 h-4 text-zinc-300" />}</div><div><span className="font-medium text-zinc-900 block">{product.name}</span><span className="text-xs text-zinc-400">{product.brand || product.sku}</span></div></div></td><td className="px-6 py-4 text-zinc-600">{product.categoryName}</td><td className="px-6 py-4 font-medium">{formatPrice(product.price)}</td><td className="px-6 py-4"><span className={cn("px-2 py-1 rounded-full text-[10px] font-medium tracking-wider uppercase", product.stock > 10 ? "bg-green-100 text-green-700" : product.stock > 0 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700")}>{product.stock}</span></td><td className="px-6 py-4"><label className="inline-flex items-center gap-3 cursor-pointer"><input type="checkbox" className="h-5 w-5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900" checked={product.isFeatured} disabled={pendingProductId === product.id} onChange={(event) => handleProductFeaturedToggle(product.id, event.target.checked)} /><span className={cn("text-xs font-medium", product.isFeatured ? "text-green-600" : "text-zinc-400")}>{product.isFeatured ? "Activé" : "Inactif"}</span></label></td><td className="px-6 py-4 text-right space-x-2"><button onClick={() => openEdit(product)} className="p-2 text-zinc-400 hover:text-zinc-900 transition-colors bg-white rounded-md shadow-sm border border-zinc-200"><Edit2 className="w-4 h-4" /></button><button onClick={() => handleDelete(product.id)} className="p-2 text-zinc-400 hover:text-red-500 transition-colors bg-white rounded-md shadow-sm border border-zinc-200"><Trash2 className="w-4 h-4" /></button></td></tr>))}</tbody></table></div>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-          <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50">
-              <h2 className="font-display font-medium text-lg text-zinc-900">{editingId ? "Modifier le produit" : "Nouveau produit"}</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-zinc-400 hover:text-zinc-900">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
-              <form id="product-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1.5">Nom du produit</label>
-                  <input {...register("name")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 outline-none" />
-                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-700 mb-1.5">Prix (EUR)</label>
-                    <input type="number" step="0.01" {...register("price")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" />
-                    {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-700 mb-1.5">Stock</label>
-                    <input type="number" {...register("stock")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" />
-                    {errors.stock && <p className="text-red-500 text-xs mt-1">{errors.stock.message}</p>}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1.5">Catégorie</label>
-                  <select {...register("categoryId")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none bg-white">
-                    <option value="">Sélectionner...</option>
-                    {categories?.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                  {errors.categoryId && <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1.5">URL de l'image (optionnel)</label>
-                  <input {...register("imageUrl")} placeholder="https://..." className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" />
-                  {errors.imageUrl && <p className="text-red-500 text-xs mt-1">{errors.imageUrl.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1.5">Marque (optionnel)</label>
-                  <input {...register("brand")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" />
-                </div>
-
-                <label className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 cursor-pointer">
-                  <div>
-                    <p className="text-sm font-medium text-zinc-900">Sélection du moment</p>
-                    <p className="text-xs text-zinc-500 mt-1">Active ce produit pour l'afficher sur la page d'accueil.</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    {...register("isFeatured")}
-                    checked={featuredValue}
-                    className="h-5 w-5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
-                  />
-                </label>
-              </form>
-            </div>
-
-            <div className="p-6 border-t border-zinc-100 bg-zinc-50 flex justify-end gap-3">
-              <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-zinc-600 hover:text-zinc-900 bg-white border border-zinc-200 rounded-lg shadow-sm hover:bg-zinc-50 transition-colors">
-                Annuler
-              </button>
-              <button type="submit" form="product-form" disabled={createProd.isPending || updateProd.isPending} className="px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 rounded-lg shadow-sm hover:bg-zinc-800 transition-colors disabled:opacity-50">
-                {createProd.isPending || updateProd.isPending ? "Enregistrement..." : "Enregistrer"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {isModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"><div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div><div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"><div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50"><h2 className="font-display font-medium text-lg text-zinc-900">{editingId ? "Modifier le produit" : "Nouveau produit"}</h2><button onClick={() => setIsModalOpen(false)} className="text-zinc-400 hover:text-zinc-900"><X className="w-5 h-5" /></button></div><div className="p-6 overflow-y-auto flex-1 custom-scrollbar"><form id="product-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5"><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Nom du produit</label><input {...register("name")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 outline-none" />{errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}</div><div className="grid grid-cols-2 gap-4"><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Prix (EUR)</label><input type="number" step="0.01" {...register("price")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" />{errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}</div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Stock</label><input type="number" {...register("stock")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" />{errors.stock && <p className="text-red-500 text-xs mt-1">{errors.stock.message}</p>}</div></div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Catégorie</label><select {...register("categoryId")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none bg-white"><option value="">Sélectionner...</option>{categories?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>{errors.categoryId && <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>}</div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Image du produit (optionnel)</label><input {...register("imageUrl")} placeholder="/images/fer-a-repasser.jpeg ou https://..." className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" />{errors.imageUrl && <p className="text-red-500 text-xs mt-1">{errors.imageUrl.message}</p>}<p className="text-[11px] text-zinc-500 mt-1.5">Pour une image locale, ajoute le fichier dans <span className="font-medium">public/images</span> puis saisis par exemple <span className="font-medium">/images/fer-a-repasser.jpeg</span>.</p></div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Marque (optionnel)</label><input {...register("brand")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" /></div><label className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 cursor-pointer"><div><p className="text-sm font-medium text-zinc-900">Sélection du moment</p><p className="text-xs text-zinc-500 mt-1">Active ce produit pour l'afficher sur la page d'accueil.</p></div><input type="checkbox" {...register("isFeatured")} checked={featuredValue} className="h-5 w-5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900" /></label></form></div><div className="p-6 border-t border-zinc-100 bg-zinc-50 flex justify-end gap-3"><button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-zinc-600 hover:text-zinc-900 bg-white border border-zinc-200 rounded-lg shadow-sm hover:bg-zinc-50 transition-colors">Annuler</button><button type="submit" form="product-form" disabled={createProd.isPending || updateProd.isPending} className="px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 rounded-lg shadow-sm hover:bg-zinc-800 transition-colors disabled:opacity-50">{createProd.isPending || updateProd.isPending ? "Enregistrement..." : "Enregistrer"}</button></div></div></div>}
     </div>
   );
 }
+
+
+
+
+

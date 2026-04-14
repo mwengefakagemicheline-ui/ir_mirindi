@@ -14,8 +14,7 @@ create table if not exists categories (
   created_at timestamptz default now()
 );
 
-alter table categories
-  add column if not exists show_on_home boolean default false;
+alter table categories add column if not exists show_on_home boolean default false;
 
 create table if not exists products (
   id uuid primary key default gen_random_uuid(),
@@ -73,6 +72,29 @@ create table if not exists cart_items (
   unique(user_id, product_id)
 );
 
+create table if not exists agricultural_contact_settings (
+  id bigint primary key,
+  location_label text not null default 'Notre agence',
+  location_value text not null default 'République démocratique du Congo, Minova centre commercial, en face de l''hôtel Luna',
+  phone_label text not null default 'Ligne directe',
+  phone_value text not null default '+243 972492668 & +243 971904750',
+  email_label text not null default 'Support expert',
+  email_value text not null default 'irmirindibusiness@gmail.com',
+  updated_at timestamptz default now()
+);
+
+create table if not exists agricultural_portfolio_items (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  season text not null,
+  image_url text not null,
+  tips text[] not null default '{}',
+  col_span text not null default 'col-span-1 md:col-span-3',
+  sort_order integer not null default 0,
+  updated_at timestamptz default now(),
+  created_at timestamptz default now()
+);
+
 create or replace function decrement_stock(product_id uuid, quantity integer)
 returns integer
 language plpgsql
@@ -113,12 +135,15 @@ create index if not exists idx_orders_user on orders(user_id);
 create index if not exists idx_orders_status on orders(status);
 create index if not exists idx_order_items_order on order_items(order_id);
 create index if not exists idx_cart_items_user on cart_items(user_id);
+create index if not exists idx_agricultural_portfolio_sort on agricultural_portfolio_items(sort_order);
 
 alter table categories enable row level security;
 alter table products enable row level security;
 alter table orders enable row level security;
 alter table order_items enable row level security;
 alter table cart_items enable row level security;
+alter table agricultural_contact_settings enable row level security;
+alter table agricultural_portfolio_items enable row level security;
 
 drop policy if exists "Categories public read" on categories;
 drop policy if exists "Categories public insert" on categories;
@@ -132,6 +157,10 @@ drop policy if exists "Orders public read" on orders;
 drop policy if exists "Orders public insert" on orders;
 drop policy if exists "Order items public read" on order_items;
 drop policy if exists "Order items public insert" on order_items;
+drop policy if exists "Agricultural contact public read" on agricultural_contact_settings;
+drop policy if exists "Agricultural contact public upsert" on agricultural_contact_settings;
+drop policy if exists "Agricultural portfolio public read" on agricultural_portfolio_items;
+drop policy if exists "Agricultural portfolio public update" on agricultural_portfolio_items;
 
 create policy "Categories public read" on categories for select to public using (true);
 create policy "Categories public insert" on categories for insert to public with check (true);
@@ -145,9 +174,88 @@ create policy "Orders public read" on orders for select to public using (true);
 create policy "Orders public insert" on orders for insert to public with check (true);
 create policy "Order items public read" on order_items for select to public using (true);
 create policy "Order items public insert" on order_items for insert to public with check (true);
+create policy "Agricultural contact public read" on agricultural_contact_settings for select to public using (true);
+create policy "Agricultural contact public upsert" on agricultural_contact_settings for all to public using (true) with check (true);
+create policy "Agricultural portfolio public read" on agricultural_portfolio_items for select to public using (true);
+create policy "Agricultural portfolio public update" on agricultural_portfolio_items for all to public using (true) with check (true);
 
 insert into categories (name, slug, description, image_url, show_on_home) values
   ('Electromenager', 'electromenager', 'Appareils essentiels pour la maison', 'https://images.pexels.com/photos/1251175/pexels-photo-1251175.jpeg?auto=compress&cs=tinysrgb&w=800', true),
   ('Accessoires Telephone', 'telephone', 'Coques, chargeurs, ecouteurs et plus', 'https://images.pexels.com/photos/699122/pexels-photo-699122.jpeg?auto=compress&cs=tinysrgb&w=800', true),
   ('Accessoires Ordinateur', 'ordinateur', 'Souris, claviers, supports', 'https://images.pexels.com/photos/2115257/pexels-photo-2115257.jpeg?auto=compress&cs=tinysrgb&w=800', true)
 on conflict (slug) do nothing;
+
+insert into agricultural_contact_settings (id) values (1)
+on conflict (id) do nothing;
+
+insert into agricultural_portfolio_items (name, season, image_url, tips, col_span, sort_order)
+select * from (values
+  ('Maïs', 'Avril à sept.', 'https://images.unsplash.com/photo-1601493700631-2b16ec4b4716?w=800&q=80', array['Semis à 25 000 plants/ha','Apport azoté fractionné','Désherbage précoce'], 'col-span-1 md:col-span-4', 1),
+  ('Haricot', 'Mars à juil.', 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80', array['Inoculation rhizobium','Espacement 40×10 cm','Éviter les excès d''eau'], 'col-span-1 md:col-span-2', 2),
+  ('Manioc', 'Toute l''année', 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&q=80', array['Boutures saines 25 cm','Sol bien drainé','Buttage à 3 mois'], 'col-span-1 md:col-span-2', 3),
+  ('Tomate', 'Jan. à juin', 'https://images.unsplash.com/photo-1592841200221-a6898f307baa?w=800&q=80', array['Tuteurage dès 30 cm','Arrosage au pied','Fongicide préventif'], 'col-span-1 md:col-span-4', 4),
+  ('Riz', 'Juin à nov.', 'https://images.unsplash.com/photo-1536304929831-ee1ca9d44906?w=800&q=80', array['Repiquage en ligne','Gestion de l''eau','Récolte à maturité'], 'col-span-1 md:col-span-3', 5),
+  ('Aubergine', 'Toute l''année', 'https://images.unsplash.com/photo-1773901768958-0ed5aaa4913c?auto=format&fit=crop&q=80&w=800', array['Repiquage sur sol enrichi','Arrosage regulier sans exces','Recolte progressive des fruits'], 'col-span-1 md:col-span-3', 6)
+) as seed(name, season, image_url, tips, col_span, sort_order)
+where not exists (select 1 from agricultural_portfolio_items);
+create table if not exists agricultural_portfolio_items (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  season text not null,
+  image_url text not null,
+  tips text[] not null default '{}',
+  col_span text not null default 'col-span-1 md:col-span-3',
+  sort_order integer not null default 0,
+  updated_at timestamptz default now(),
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_agricultural_portfolio_sort
+on agricultural_portfolio_items(sort_order);
+
+alter table agricultural_portfolio_items enable row level security;
+
+drop policy if exists "Agricultural portfolio public read" on agricultural_portfolio_items;
+drop policy if exists "Agricultural portfolio public update" on agricultural_portfolio_items;
+
+create policy "Agricultural portfolio public read"
+on agricultural_portfolio_items for select to public using (true);
+
+create policy "Agricultural portfolio public update"
+on agricultural_portfolio_items for all to public using (true) with check (true);
+
+insert into agricultural_portfolio_items (name, season, image_url, tips, col_span, sort_order)
+select * from (values
+  ('Maïs', 'Avril à sept.', 'https://images.unsplash.com/photo-1601493700631-2b16ec4b4716?w=800&q=80', array['Semis à 25 000 plants/ha','Apport azoté fractionné','Désherbage précoce'], 'col-span-1 md:col-span-4', 1),
+  ('Haricot', 'Mars à juil.', 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80', array['Inoculation rhizobium','Espacement 40×10 cm','Éviter les excès d''eau'], 'col-span-1 md:col-span-2', 2),
+  ('Manioc', 'Toute l''année', 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&q=80', array['Boutures saines 25 cm','Sol bien drainé','Buttage à 3 mois'], 'col-span-1 md:col-span-2', 3),
+  ('Tomate', 'Jan. à juin', 'https://images.unsplash.com/photo-1592841200221-a6898f307baa?w=800&q=80', array['Tuteurage dès 30 cm','Arrosage au pied','Fongicide préventif'], 'col-span-1 md:col-span-4', 4),
+  ('Riz', 'Juin à nov.', 'https://images.unsplash.com/photo-1536304929831-ee1ca9d44906?w=800&q=80', array['Repiquage en ligne','Gestion de l''eau','Récolte à maturité'], 'col-span-1 md:col-span-3', 5),
+  ('Aubergine', 'Toute l''année', 'https://images.unsplash.com/photo-1773901768958-0ed5aaa4913c?auto=format&fit=crop&q=80&w=800', array['Repiquage sur sol enrichi','Arrosage regulier sans exces','Recolte progressive des fruits'], 'col-span-1 md:col-span-3', 6)
+) as seed(name, season, image_url, tips, col_span, sort_order)
+where not exists (select 1 from agricultural_portfolio_items);
+
+
+
+
+create table if not exists agricultural_inquiries (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  email text not null,
+  message text not null,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_agricultural_inquiries_created_at
+on agricultural_inquiries(created_at desc);
+
+alter table agricultural_inquiries enable row level security;
+
+drop policy if exists "Agricultural inquiries public insert" on agricultural_inquiries;
+drop policy if exists "Agricultural inquiries public read" on agricultural_inquiries;
+
+create policy "Agricultural inquiries public insert"
+on agricultural_inquiries for insert to public with check (true);
+
+create policy "Agricultural inquiries public read"
+on agricultural_inquiries for select to public using (true);

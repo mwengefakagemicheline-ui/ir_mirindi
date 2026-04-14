@@ -47,6 +47,99 @@ export type Order = {
   items: OrderItem[];
 };
 
+export type AgriculturalContactSettings = {
+  locationLabel: string;
+  locationValue: string;
+  phoneLabel: string;
+  phoneValue: string;
+  emailLabel: string;
+  emailValue: string;
+};
+
+export type AgriculturalPortfolioItem = {
+  id: string;
+  name: string;
+  season: string;
+  imageUrl: string;
+  tips: string[];
+  colSpan: string;
+  sortOrder: number;
+};
+
+export type AgriculturalInquiry = {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  createdAt: string;
+};
+
+const defaultAgriculturalContactSettings: AgriculturalContactSettings = {
+  locationLabel: "Notre agence",
+  locationValue: "République démocratique du Congo, Minova centre commercial, en face de l'hôtel Luna",
+  phoneLabel: "Ligne directe",
+  phoneValue: "+243 972492668 & +243 971904750",
+  emailLabel: "Support expert",
+  emailValue: "irmirindibusiness@gmail.com",
+};
+
+const defaultAgriculturalPortfolioItems: AgriculturalPortfolioItem[] = [
+  {
+    id: "fallback-mais",
+    name: "Maïs",
+    season: "Avril à sept.",
+    imageUrl: "https://images.unsplash.com/photo-1601493700631-2b16ec4b4716?w=800&q=80",
+    tips: ["Semis à 25 000 plants/ha", "Apport azoté fractionné", "Désherbage précoce"],
+    colSpan: "col-span-1 md:col-span-4",
+    sortOrder: 1,
+  },
+  {
+    id: "fallback-haricot",
+    name: "Haricot",
+    season: "Mars à juil.",
+    imageUrl: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80",
+    tips: ["Inoculation rhizobium", "Espacement 40×10 cm", "Éviter les excès d'eau"],
+    colSpan: "col-span-1 md:col-span-2",
+    sortOrder: 2,
+  },
+  {
+    id: "fallback-manioc",
+    name: "Manioc",
+    season: "Toute l'année",
+    imageUrl: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&q=80",
+    tips: ["Boutures saines 25 cm", "Sol bien drainé", "Buttage à 3 mois"],
+    colSpan: "col-span-1 md:col-span-2",
+    sortOrder: 3,
+  },
+  {
+    id: "fallback-tomate",
+    name: "Tomate",
+    season: "Jan. à juin",
+    imageUrl: "https://images.unsplash.com/photo-1592841200221-a6898f307baa?w=800&q=80",
+    tips: ["Tuteurage dès 30 cm", "Arrosage au pied", "Fongicide préventif"],
+    colSpan: "col-span-1 md:col-span-4",
+    sortOrder: 4,
+  },
+  {
+    id: "fallback-riz",
+    name: "Riz",
+    season: "Juin à nov.",
+    imageUrl: "https://images.unsplash.com/photo-1536304929831-ee1ca9d44906?w=800&q=80",
+    tips: ["Repiquage en ligne", "Gestion de l'eau", "Récolte à maturité"],
+    colSpan: "col-span-1 md:col-span-3",
+    sortOrder: 5,
+  },
+  {
+    id: "fallback-aubergine",
+    name: "Aubergine",
+    season: "Toute l'année",
+    imageUrl: "https://images.unsplash.com/photo-1773901768958-0ed5aaa4913c?auto=format&fit=crop&q=80&w=800",
+    tips: ["Repiquage sur sol enrichi", "Arrosage regulier sans exces", "Recolte progressive des fruits"],
+    colSpan: "col-span-1 md:col-span-3",
+    sortOrder: 6,
+  },
+];
+
 function mapProduct(row: any): Product {
   const comparePrice = row.compare_price ?? null;
   const isPromo = comparePrice !== null && comparePrice > row.price;
@@ -81,6 +174,43 @@ function mapCategory(row: any): Category {
     description: row.description ?? null,
     imageUrl: row.image_url ?? null,
     showOnHome: !!row.show_on_home,
+  };
+}
+
+function mapAgriculturalContactSettings(row: any | null): AgriculturalContactSettings {
+  if (!row) {
+    return defaultAgriculturalContactSettings;
+  }
+
+  return {
+    locationLabel: row.location_label ?? defaultAgriculturalContactSettings.locationLabel,
+    locationValue: row.location_value ?? defaultAgriculturalContactSettings.locationValue,
+    phoneLabel: row.phone_label ?? defaultAgriculturalContactSettings.phoneLabel,
+    phoneValue: row.phone_value ?? defaultAgriculturalContactSettings.phoneValue,
+    emailLabel: row.email_label ?? defaultAgriculturalContactSettings.emailLabel,
+    emailValue: row.email_value ?? defaultAgriculturalContactSettings.emailValue,
+  };
+}
+
+function mapAgriculturalPortfolioItem(row: any): AgriculturalPortfolioItem {
+  return {
+    id: row.id,
+    name: row.name,
+    season: row.season,
+    imageUrl: row.image_url,
+    tips: Array.isArray(row.tips) ? row.tips.filter(Boolean) : [],
+    colSpan: row.col_span ?? "col-span-1 md:col-span-3",
+    sortOrder: row.sort_order ?? 0,
+  };
+}
+
+function mapAgriculturalInquiry(row: any): AgriculturalInquiry {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    message: row.message,
+    createdAt: row.created_at,
   };
 }
 
@@ -293,11 +423,7 @@ export function useToggleProductFeatured() {
 export function useDeleteProduct() {
   return useMutation({
     mutationFn: async (payload: { id: string }) => {
-      const { error } = await supabase
-        .from("products")
-        .delete()
-        .eq("id", payload.id);
-
+      const { error } = await supabase.from("products").delete().eq("id", payload.id);
       if (error) throw error;
       return true;
     },
@@ -329,7 +455,6 @@ export function useCreateOrder() {
       if (prodError) throw prodError;
 
       const products = productsRaw ?? [];
-
       const productMap = new Map(products.map((p: any) => [p.id, p]));
 
       let total = 0;
@@ -370,10 +495,7 @@ export function useCreateOrder() {
         };
       });
 
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-
+      const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
       if (itemsError) throw itemsError;
 
       for (const item of payload.data.items) {
@@ -396,9 +518,7 @@ export function useGetOrder(orderId?: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select(
-          "id, customer_name, customer_email, shipping_address, city, postal_code, total, order_items(product_name, quantity, price)"
-        )
+        .select("id, customer_name, customer_email, shipping_address, city, postal_code, total, order_items(product_name, quantity, price)")
         .eq("id", orderId)
         .single();
 
@@ -458,3 +578,137 @@ export function useListOrders(limit: number = 12) {
     },
   });
 }
+
+export function useCreateAgriculturalInquiry() {
+  return useMutation({
+    mutationFn: async (payload: { name: string; email: string; message: string }) => {
+      const { data, error } = await supabase
+        .from("agricultural_inquiries")
+        .insert({
+          name: payload.name,
+          email: payload.email,
+          message: payload.message,
+        })
+        .select("id, name, email, message, created_at")
+        .single();
+
+      if (error) throw error;
+      return mapAgriculturalInquiry(data);
+    },
+  });
+}
+
+export function useListAgriculturalInquiries(limit: number = 12) {
+  return useQuery({
+    queryKey: ["agricultural-inquiries", limit],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agricultural_inquiries")
+        .select("id, name, email, message, created_at")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return (data ?? []).map(mapAgriculturalInquiry);
+    },
+  });
+}
+
+export function useDeleteAgriculturalInquiry() {
+  return useMutation({
+    mutationFn: async (payload: { id: string }) => {
+      const { error } = await supabase.from("agricultural_inquiries").delete().eq("id", payload.id);
+      if (error) throw error;
+      return true;
+    },
+  });
+}
+
+export function useAgriculturalContactSettings() {
+  return useQuery({
+    queryKey: ["agricultural-contact-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agricultural_contact_settings")
+        .select("location_label, location_value, phone_label, phone_value, email_label, email_value")
+        .eq("id", 1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return mapAgriculturalContactSettings(data);
+    },
+  });
+}
+
+export function useUpsertAgriculturalContactSettings() {
+  return useMutation({
+    mutationFn: async (payload: AgriculturalContactSettings) => {
+      const { data, error } = await supabase
+        .from("agricultural_contact_settings")
+        .upsert(
+          {
+            id: 1,
+            location_label: payload.locationLabel,
+            location_value: payload.locationValue,
+            phone_label: payload.phoneLabel,
+            phone_value: payload.phoneValue,
+            email_label: payload.emailLabel,
+            email_value: payload.emailValue,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        )
+        .select("location_label, location_value, phone_label, phone_value, email_label, email_value")
+        .single();
+
+      if (error) throw error;
+      return mapAgriculturalContactSettings(data);
+    },
+  });
+}
+
+export function useAgriculturalPortfolioItems() {
+  return useQuery({
+    queryKey: ["agricultural-portfolio-items"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agricultural_portfolio_items")
+        .select("id, name, season, image_url, tips, col_span, sort_order")
+        .order("sort_order", { ascending: true });
+
+      if (error) throw error;
+
+      const items = (data ?? []).map(mapAgriculturalPortfolioItem);
+      return items.length > 0 ? items : defaultAgriculturalPortfolioItems;
+    },
+  });
+}
+
+export function useUpdateAgriculturalPortfolioItem() {
+  return useMutation({
+    mutationFn: async (payload: AgriculturalPortfolioItem) => {
+      const { data, error } = await supabase
+        .from("agricultural_portfolio_items")
+        .update({
+          name: payload.name,
+          season: payload.season,
+          image_url: payload.imageUrl,
+          tips: payload.tips,
+          col_span: payload.colSpan,
+          sort_order: payload.sortOrder,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", payload.id)
+        .select("id, name, season, image_url, tips, col_span, sort_order")
+        .single();
+
+      if (error) throw error;
+      return mapAgriculturalPortfolioItem(data);
+    },
+  });
+}
+
+
+
+
+

@@ -8,9 +8,11 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export function Layout({ children }: { children: ReactNode }) {
   const { totalItems } = useCart();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,9 +22,12 @@ export function Layout({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
+    setSearchOpen(false);
+
+    const params = new URLSearchParams(window.location.search);
+    setSearchValue(params.get("search") || "");
   }, [location]);
 
   const navLinks = [
@@ -31,34 +36,39 @@ export function Layout({ children }: { children: ReactNode }) {
     { name: "Agricole", path: "/agricole", green: true },
   ];
 
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const value = searchValue.trim();
+    navigate(value ? `/catalog?search=${encodeURIComponent(value)}` : "/catalog");
+    setMobileMenuOpen(false);
+    setSearchOpen(false);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background selection:bg-zinc-200">
       <header
         className={cn(
           "fixed top-0 w-full z-50 transition-all duration-300 border-b",
-          scrolled 
-            ? "bg-white/90 backdrop-blur-md border-zinc-200 py-3 shadow-sm" 
+          scrolled
+            ? "bg-white/90 backdrop-blur-md border-zinc-200 py-3 shadow-sm"
             : "bg-white border-transparent py-4"
         )}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          {/* Mobile Menu Button */}
-          <button 
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+          <button
             className="md:hidden p-2 -ml-2 text-zinc-600 hover:text-zinc-900"
             onClick={() => setMobileMenuOpen(true)}
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Logo */}
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="font-display text-lg md:text-xl font-bold tracking-[0.2em] text-zinc-900 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0"
           >
             A C C E S S O I R E S
           </Link>
 
-          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
             {navLinks.map((link) => (
               <Link
@@ -81,11 +91,47 @@ export function Layout({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          {/* Actions */}
-          <div className="flex items-center gap-5 md:gap-7">
-            <Link href="/catalog" className="text-zinc-600 hover:text-zinc-900 transition-colors hidden sm:block">
+          <div className="flex items-center gap-3 md:gap-4 ml-auto md:ml-0">
+            <AnimatePresence>
+              {searchOpen && (
+                <motion.form
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 240 }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onSubmit={handleSearchSubmit}
+                  className="hidden md:flex items-center overflow-hidden"
+                >
+                  <div className="flex items-center gap-2 bg-zinc-100 border border-zinc-200 rounded-full px-3 py-2 w-full">
+                    <Search className="w-4 h-4 text-zinc-400 shrink-0" />
+                    <input
+                      type="text"
+                      value={searchValue}
+                      onChange={(e) => setSearchValue(e.target.value)}
+                      placeholder="Rechercher un produit..."
+                      className="w-full bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
+                      autoFocus
+                    />
+                  </div>
+                </motion.form>
+              )}
+            </AnimatePresence>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (searchOpen && searchValue.trim()) {
+                  navigate(`/catalog?search=${encodeURIComponent(searchValue.trim())}`);
+                  setSearchOpen(false);
+                  return;
+                }
+                setSearchOpen((prev) => !prev);
+              }}
+              className="text-zinc-600 hover:text-zinc-900 transition-colors hidden sm:block"
+              aria-label="Rechercher"
+            >
               <Search className="w-4 h-4" />
-            </Link>
+            </button>
             <Link href="/admin" className="text-zinc-600 hover:text-zinc-900 transition-colors">
               <User className="w-4 h-4" />
             </Link>
@@ -93,7 +139,7 @@ export function Layout({ children }: { children: ReactNode }) {
               <ShoppingBag className="w-4 h-4" />
               <AnimatePresence>
                 {totalItems > 0 && (
-                  <motion.span 
+                  <motion.span
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0, opacity: 0 }}
@@ -108,7 +154,6 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <>
@@ -132,6 +177,20 @@ export function Layout({ children }: { children: ReactNode }) {
                   <X className="w-4 h-4" />
                 </button>
               </div>
+
+              <form onSubmit={handleSearchSubmit} className="px-6 pt-6">
+                <div className="flex items-center gap-2 bg-zinc-100 border border-zinc-200 rounded-full px-4 py-3">
+                  <Search className="w-4 h-4 text-zinc-400 shrink-0" />
+                  <input
+                    type="text"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    placeholder="Rechercher un produit..."
+                    className="w-full bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
+                  />
+                </div>
+              </form>
+
               <div className="flex flex-col py-6 px-6 gap-8">
                 {navLinks.map((link) => (
                   <Link
@@ -149,7 +208,19 @@ export function Layout({ children }: { children: ReactNode }) {
                   </Link>
                 ))}
               </div>
-              <div className="mt-auto p-6 bg-zinc-50">
+              <div className="mt-auto p-6 bg-zinc-50 space-y-4">
+                <button
+                  type="submit"
+                  form=""
+                  onClick={() => {
+                    const value = searchValue.trim();
+                    navigate(value ? `/catalog?search=${encodeURIComponent(value)}` : "/catalog");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-zinc-900 px-5 py-3 text-sm font-medium text-white"
+                >
+                  <Search className="w-4 h-4" /> Lancer la recherche
+                </button>
                 <Link href="/admin" className="flex items-center gap-3 text-sm tracking-widest uppercase text-zinc-600 font-medium">
                   <User className="w-4 h-4" /> Espace Admin
                 </Link>
@@ -187,7 +258,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <ul className="space-y-4 text-sm">
               <li><Link href="/catalog?category=telephones" className="hover:text-white transition-colors">Téléphones</Link></li>
               <li><Link href="/catalog?category=ordinateurs" className="hover:text-white transition-colors">Ordinateurs</Link></li>
-              <li><Link href="/catalog?category=cafetieres" className="hover:text-white transition-colors">Cafetières</Link></li>
+              
               <li><Link href="/catalog?category=audio" className="hover:text-white transition-colors">Audio</Link></li>
             </ul>
           </div>
@@ -215,5 +286,4 @@ export function Layout({ children }: { children: ReactNode }) {
     </div>
   );
 }
-
 
