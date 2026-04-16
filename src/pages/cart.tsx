@@ -3,6 +3,7 @@ import { formatPrice } from "@/lib/utils";
 import { Link } from "wouter";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
+import { getProductImage } from "@/lib/image-fallbacks";
 
 export function Cart() {
   const { items, updateQuantity, removeFromCart, totalPrice } = useCart();
@@ -10,8 +11,12 @@ export function Cart() {
   if (items.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-32 text-center flex flex-col items-center">
-        <div className="w-24 h-24 bg-zinc-50 rounded-full flex items-center justify-center mb-8">
-          <ShoppingBag className="w-10 h-10 text-zinc-300" />
+        <div className="w-44 h-44 rounded-[2rem] overflow-hidden mb-8 shadow-lg shadow-zinc-900/5">
+          <img
+            src="https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=800&q=80"
+            alt="Accessoires"
+            className="w-full h-full object-cover"
+          />
         </div>
         <h1 className="text-2xl font-display font-medium text-zinc-900 mb-4">Votre panier est vide</h1>
         <p className="text-zinc-500 mb-8 max-w-md">
@@ -50,7 +55,7 @@ export function Cart() {
                 <div className="col-span-6 flex items-center gap-6 w-full">
                   <div className="w-20 h-24 md:w-24 md:h-32 bg-zinc-50 rounded-lg overflow-hidden flex-shrink-0">
                     <img 
-                      src={item.imageUrl || `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&q=80`}
+                      src={getProductImage(item)}
                       alt={item.name}
                       className="w-full h-full object-cover"
                     />

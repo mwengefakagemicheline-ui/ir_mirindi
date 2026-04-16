@@ -15,10 +15,9 @@ import {
   Microscope,
   Sprout,
   LineChart,
-  Send,
 } from "lucide-react";
-import { useAgriculturalContactSettings, useAgriculturalPortfolioItems, useCreateAgriculturalInquiry } from "@/lib/api-client";
-import { toast } from "@/hooks/use-toast";
+import { useAgriculturalContactSettings, useAgriculturalPortfolioItems } from "@/lib/api-client";
+import { AgriculturalContactForm } from "@/components/agricultural-contact-form";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -65,11 +64,8 @@ const stats = [
 
 export function Agricole() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [form, setForm] = useState({ nom: "", email: "", message: "" });
-  const [sent, setSent] = useState(false);
   const { data: contactSettings } = useAgriculturalContactSettings();
   const { data: portfolioItems } = useAgriculturalPortfolioItems();
-  const createAgriculturalInquiry = useCreateAgriculturalInquiry();
 
   const faqs = [
     {
@@ -108,25 +104,6 @@ export function Agricole() {
     },
   ];
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    try {
-      await createAgriculturalInquiry.mutateAsync({
-        name: form.nom,
-        email: form.email,
-        message: form.message,
-      });
-      setSent(true);
-      setForm({ nom: "", email: "", message: "" });
-    } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error?.message || "Impossible d'envoyer votre demande.",
-        variant: "destructive",
-      });
-    }
-  }
-
   return (
     <div className="bg-white selection:bg-green-500/30 selection:text-green-900">
       <section className="relative h-screen min-h-[600px] flex items-center overflow-hidden">
@@ -159,7 +136,7 @@ export function Agricole() {
 
       <section className="py-32 bg-white"><div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"><div className="text-center mb-20"><h2 className="text-4xl md:text-5xl font-display font-semibold text-zinc-900 mb-6">Expertise & Réponses</h2><p className="text-zinc-500 max-w-xl mx-auto">Des réponses claires à vos questions les plus fréquentes sur la conduite de vos cultures et l'optimisation de vos rendements.</p></div><div className="space-y-6">{faqs.map((faq, i) => <div key={i} className="group border-b border-zinc-200 pb-6"><button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-start gap-6 text-left py-2 outline-none"><span className="text-[#4ade80] font-display font-bold text-xl mt-1 shrink-0">0{i + 1}</span><div className="flex-1"><h3 className={"text-xl font-display font-medium transition-colors " + (openFaq === i ? "text-zinc-900" : "text-zinc-700 group-hover:text-zinc-900")}>{faq.q}</h3><AnimatePresence>{openFaq === i && <motion.div initial={{ height: 0, opacity: 0, marginTop: 0 }} animate={{ height: "auto", opacity: 1, marginTop: 16 }} exit={{ height: 0, opacity: 0, marginTop: 0 }} transition={{ duration: 0.3, ease: "easeInOut" }} className="overflow-hidden"><p className="text-zinc-500 leading-relaxed pr-8">{faq.r}</p></motion.div>}</AnimatePresence></div><ChevronDown className={"w-6 h-6 shrink-0 transition-transform duration-500 mt-1 " + (openFaq === i ? "rotate-180 text-zinc-900" : "text-zinc-400 group-hover:text-zinc-600")} /></button><div className="relative h-[2px] w-full mt-6 bg-transparent"><motion.div className="absolute top-0 left-0 h-full bg-[#4ade80]" initial={{ width: 0 }} animate={{ width: openFaq === i ? "100%" : "0%" }} transition={{ duration: 0.4 }} /></div></div>)}</div></div></section>
 
-      <section id="contact" className="py-32 relative overflow-hidden"><div className="absolute inset-0 bg-gradient-to-br from-zinc-950 to-[#064e3b] z-0" /><div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center"><motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}><h2 className="text-5xl font-display font-semibold text-white mb-6">Prêt à optimiser <br /><span className="text-[#4ade80]">votre exploitation ?</span></h2><p className="text-zinc-300 text-lg leading-relaxed mb-8 max-w-lg">Échangeons sur vos défis agronomiques. Nos experts vous accompagnent pour construire un itinéraire technique performant.</p><ul className="space-y-3 text-sm text-zinc-200/90 leading-relaxed mb-12"><li>• Consultation et diagnostic agronomique.</li><li>• Orientations à l'ouverture de projet agricole.</li><li>• Accompagnement complet des porteurs de projet.</li><li>• Vente de produits agricoles : cacao, tomate, pastèque, maïs, oignon, et autres produits.</li></ul><div className="space-y-6">{contactItems.map((item, i) => <div key={i} className="flex items-center gap-6 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"><div className="w-14 h-14 rounded-xl bg-[#4ade80]/20 flex items-center justify-center text-[#4ade80]">{item.icon}</div><div><p className="text-zinc-400 text-xs uppercase tracking-widest font-semibold mb-1">{item.label}</p><p className="text-white font-medium text-lg">{item.value}</p></div></div>)}</div></motion.div><motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="bg-white rounded-[2rem] p-10 lg:p-12 shadow-2xl relative overflow-hidden"><AnimatePresence mode="wait">{sent ? <motion.div key="success" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="text-center py-16 flex flex-col items-center justify-center h-full"><motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.2 }} className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6"><CheckCircle2 className="w-12 h-12 text-green-500" /></motion.div><h3 className="text-3xl font-display font-semibold text-zinc-900 mb-4">Demande reçue</h3><p className="text-zinc-500 text-lg mb-8 max-w-xs mx-auto">Un de nos agronomes étudie votre demande et vous recontactera sous 24h.</p><button onClick={() => setSent(false)} className="text-[#4ade80] font-semibold hover:text-green-600 transition-colors border-b-2 border-transparent hover:border-green-600 pb-1">Nouvelle demande</button></motion.div> : <motion.form key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onSubmit={handleSubmit} className="space-y-8"><h3 className="text-2xl font-display font-semibold text-zinc-900 mb-8">Démarrer une collaboration</h3><div className="space-y-6"><div className="relative"><input type="text" id="nom" required value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} className="peer w-full border-b-2 border-zinc-200 bg-transparent px-0 py-3 text-lg text-zinc-900 placeholder-transparent focus:border-[#4ade80] focus:outline-none transition-colors" placeholder="Jean Dupont" /><label htmlFor="nom" className="absolute left-0 -top-3.5 text-sm text-zinc-500 transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-lg peer-focus:-top-3.5 peer-focus:text-sm peer-focus:text-[#4ade80] font-medium pointer-events-none">Votre nom complet</label></div><div className="relative"><input type="email" id="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="peer w-full border-b-2 border-zinc-200 bg-transparent px-0 py-3 text-lg text-zinc-900 placeholder-transparent focus:border-[#4ade80] focus:outline-none transition-colors" placeholder="email@domaine.com" /><label htmlFor="email" className="absolute left-0 -top-3.5 text-sm text-zinc-500 transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-lg peer-focus:-top-3.5 peer-focus:text-sm peer-focus:text-[#4ade80] font-medium pointer-events-none">Adresse email professionnelle</label></div><div className="relative"><textarea id="message" required rows={4} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className="peer w-full border-b-2 border-zinc-200 bg-transparent px-0 py-3 text-lg text-zinc-900 placeholder-transparent focus:border-[#4ade80] focus:outline-none transition-colors resize-none" placeholder="Décrivez votre besoin" /><label htmlFor="message" className="absolute left-0 -top-3.5 text-sm text-zinc-500 transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-lg peer-focus:-top-3.5 peer-focus:text-sm peer-focus:text-[#4ade80] font-medium pointer-events-none">Détails de l'exploitation</label></div></div><button type="submit" disabled={createAgriculturalInquiry.isPending} className="w-full bg-[#166534] hover:bg-[#14532d] text-white font-bold text-lg py-5 rounded-xl transition-all duration-300 shadow-xl shadow-green-900/20 flex items-center justify-center gap-3 group mt-4 disabled:opacity-60">{createAgriculturalInquiry.isPending ? "Envoi..." : "Envoyer la demande"}<Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /></button></motion.form>}</AnimatePresence></motion.div></div></div></section>
+      <section id="contact" className="py-32 relative overflow-hidden"><div className="absolute inset-0 bg-gradient-to-br from-zinc-950 to-[#064e3b] z-0" /><div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center"><motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}><h2 className="text-5xl font-display font-semibold text-white mb-6">Prêt à optimiser <br /><span className="text-[#4ade80]">votre exploitation ?</span></h2><p className="text-zinc-300 text-lg leading-relaxed mb-8 max-w-lg">Échangeons sur vos défis agronomiques. Nos experts vous accompagnent pour construire un itinéraire technique performant.</p><ul className="space-y-3 text-sm text-zinc-200/90 leading-relaxed mb-12"><li>• Consultation et diagnostic agronomique.</li><li>• Orientations à l'ouverture de projet agricole.</li><li>• Accompagnement complet des porteurs de projet.</li><li>• Vente de produits agricoles : cacao, tomate, pastèque, maïs, oignon, et autres produits.</li></ul><div className="space-y-6">{contactItems.map((item, i) => <div key={i} className="flex items-center gap-6 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"><div className="w-14 h-14 rounded-xl bg-[#4ade80]/20 flex items-center justify-center text-[#4ade80]">{item.icon}</div><div><p className="text-zinc-400 text-xs uppercase tracking-widest font-semibold mb-1">{item.label}</p><p className="text-white font-medium text-lg">{item.value}</p></div></div>)}</div></motion.div><motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}><AgriculturalContactForm variant="light" title="Démarrer une collaboration" /></motion.div></div></div></section>
     </div>
   );
 }

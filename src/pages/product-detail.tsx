@@ -5,6 +5,7 @@ import { formatPrice } from "@/lib/utils";
 import { useState } from "react";
 import { Minus, Plus, ShoppingBag, Truck, ShieldCheck, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { getProductImage } from "@/lib/image-fallbacks";
 
 export function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +15,7 @@ export function ProductDetail() {
 
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const productImage = product ? getProductImage(product) : "";
 
   const handleAddToCart = () => {
     if (product) {
@@ -60,16 +62,15 @@ export function ProductDetail() {
               </div>
             )}
             <img
-              src={product.imageUrl || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1000&q=80"}
+              src={productImage}
               alt={product.name}
               className="w-full h-full object-cover object-center"
             />
           </div>
-          {/* Thumbnails placeholder */}
           <div className="grid grid-cols-4 gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="aspect-square bg-zinc-100 rounded-xl overflow-hidden cursor-pointer opacity-50 hover:opacity-100 transition-opacity">
-                <img src={product.imageUrl || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&q=80"} className="w-full h-full object-cover" />
+              <div key={i} className="aspect-square bg-zinc-100 rounded-xl overflow-hidden cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
+                <img src={productImage} alt={`${product.name} vue ${i}`} className="w-full h-full object-cover" />
               </div>
             ))}
           </div>

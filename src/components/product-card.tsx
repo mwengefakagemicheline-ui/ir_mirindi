@@ -4,6 +4,7 @@ import { formatPrice } from "@/lib/utils";
 import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { toast } from "@/hooks/use-toast";
+import { getProductImage } from "@/lib/image-fallbacks";
 
 interface ProductCardProps {
   product: Product;
@@ -37,7 +38,7 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
         
         <img
-          src={product.imageUrl || `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80`}
+          src={getProductImage(product)}
           alt={product.name}
           className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
         />

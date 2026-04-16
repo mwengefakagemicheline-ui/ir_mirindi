@@ -3,6 +3,7 @@ import { useListProducts, useListCategories } from "@/lib/api-client";
 import { ProductCard } from "@/components/product-card";
 import { CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { getCategoryFallbackImage } from "@/lib/image-fallbacks";
 
 export function Home() {
   const { data: categoriesData, isLoading: loadingCats } = useListCategories();
@@ -138,15 +139,11 @@ export function Home() {
                 href={`/catalog?category=${cat.slug}`}
                 className="group block relative overflow-hidden rounded-xl aspect-[3/4] bg-zinc-100 shadow-sm hover:shadow-xl transition-all duration-500"
               >
-                {cat.imageUrl ? (
-                  <img
-                    src={cat.imageUrl}
-                    alt={cat.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-950 transition-transform duration-700 group-hover:scale-110" />
-                )}
+                <img
+                  src={cat.imageUrl || getCategoryFallbackImage(cat.slug, cat.name)}
+                  alt={cat.name}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:from-black/90 transition-colors duration-500"></div>
 

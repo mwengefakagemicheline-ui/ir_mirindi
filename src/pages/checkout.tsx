@@ -7,6 +7,7 @@ import { useCreateOrder } from "@/lib/api-client";
 import { useLocation, Link } from "wouter";
 import { ChevronLeft, Lock } from "lucide-react";
 import { useEffect } from "react";
+import { getProductImage } from "@/lib/image-fallbacks";
 
 const checkoutSchema = z.object({
   customerName: z.string().min(2, "Nom requis"),
@@ -168,7 +169,7 @@ export function Checkout() {
                     <span className="absolute -top-1.5 -right-1.5 bg-zinc-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center z-10">
                       {item.quantity}
                     </span>
-                    <img src={item.imageUrl || ''} alt="" className="w-full h-full object-cover" />
+                    <img src={getProductImage(item)} alt={item.name} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 flex flex-col justify-center">
                     <h4 className="text-sm font-medium text-zinc-900 line-clamp-1">{item.name}</h4>

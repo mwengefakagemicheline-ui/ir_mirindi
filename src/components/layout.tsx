@@ -1,10 +1,11 @@
 ﻿import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { ShoppingBag, Search, Menu, User, X } from "lucide-react";
+import { ShoppingBag, Search, Menu, User, X, MessageCircle } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { AgriculturalContactForm } from "@/components/agricultural-contact-form";
 
 export function Layout({ children }: { children: ReactNode }) {
   const { totalItems } = useCart();
@@ -35,6 +36,8 @@ export function Layout({ children }: { children: ReactNode }) {
     { name: "Catalogue", path: "/catalog" },
     { name: "Agricole", path: "/agricole", green: true },
   ];
+
+  const showFloatingContact = !location.startsWith("/admin");
 
   const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -245,15 +248,35 @@ export function Layout({ children }: { children: ReactNode }) {
         </AnimatePresence>
       </main>
 
+      {showFloatingContact && (
+        <a
+          href="/agricole#contact"
+          className="fixed bottom-6 right-4 md:right-6 z-40 inline-flex items-center gap-3 rounded-full bg-[#166534] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_45px_-20px_rgba(22,101,52,0.8)] transition-all duration-300 hover:bg-[#14532d] hover:scale-[1.02]"
+        >
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
+            <MessageCircle className="h-4 w-4" />
+          </span>
+          <span>Contact</span>
+        </a>
+      )}
+
       <footer className="bg-zinc-950 border-t border-zinc-900 py-20 text-zinc-400 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-12 gap-12">
-          <div className="md:col-span-5 text-center md:text-left">
+          <div className="md:col-span-4 text-center md:text-left">
             <h3 className="font-display text-xl font-bold tracking-[0.2em] mb-6 text-white">A C C E S S O I R E S</h3>
             <p className="text-zinc-500 max-w-sm mx-auto md:mx-0 leading-relaxed">
               Des accessoires premium pour votre quotidien technologique et votre art de vivre. Qualité, design et performance.
             </p>
           </div>
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
+            <AgriculturalContactForm
+              variant="dark"
+              compact
+              title="Contact rapide"
+              description="Écrivez-nous directement depuis le footer pour une demande produit, livraison ou accompagnement."
+            />
+          </div>
+          <div className="md:col-span-2">
             <h4 className="font-semibold mb-6 text-white tracking-[0.15em] text-xs uppercase">Boutique</h4>
             <ul className="space-y-4 text-sm">
               <li><Link href="/catalog?category=telephones" className="hover:text-white transition-colors">Téléphones</Link></li>
@@ -262,10 +285,10 @@ export function Layout({ children }: { children: ReactNode }) {
               <li><Link href="/catalog?category=audio" className="hover:text-white transition-colors">Audio</Link></li>
             </ul>
           </div>
-          <div className="md:col-span-4">
+          <div className="md:col-span-2">
             <h4 className="font-semibold mb-6 text-white tracking-[0.15em] text-xs uppercase">Assistance</h4>
             <ul className="space-y-4 text-sm">
-              <li><a href="#" className="hover:text-white transition-colors">Contactez-nous</a></li>
+              <li><a href="/agricole#contact" className="hover:text-white transition-colors">Contactez-nous</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Livraison & Retours</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Garantie & SAV</a></li>
               <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>
@@ -286,4 +309,5 @@ export function Layout({ children }: { children: ReactNode }) {
     </div>
   );
 }
+
 
