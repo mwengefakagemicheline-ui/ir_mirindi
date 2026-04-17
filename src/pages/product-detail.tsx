@@ -38,6 +38,13 @@ export function ProductDetail() {
   if (error || !product) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center min-h-[60vh] flex flex-col items-center justify-center">
+        <div className="w-full max-w-md rounded-[2rem] overflow-hidden shadow-lg shadow-zinc-900/5 mb-8">
+          <img
+            src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1200&q=80"
+            alt="Produit"
+            className="w-full h-64 object-cover"
+          />
+        </div>
         <h2 className="text-2xl font-medium mb-4">Produit introuvable</h2>
         <Link href="/catalog" className="text-zinc-500 hover:text-zinc-900 flex items-center gap-2">
           <ArrowLeft className="w-4 h-4" /> Retour au catalogue

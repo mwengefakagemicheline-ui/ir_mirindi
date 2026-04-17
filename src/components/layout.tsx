@@ -250,7 +250,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {showFloatingContact && (
         <a
-          href="/agricole#contact"
+          href="/agricole#contact-form"
           className="fixed bottom-6 right-4 md:right-6 z-40 inline-flex items-center gap-3 rounded-full bg-[#166534] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_45px_-20px_rgba(22,101,52,0.8)] transition-all duration-300 hover:bg-[#14532d] hover:scale-[1.02]"
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
@@ -288,7 +288,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <div className="md:col-span-2">
             <h4 className="font-semibold mb-6 text-white tracking-[0.15em] text-xs uppercase">Assistance</h4>
             <ul className="space-y-4 text-sm">
-              <li><a href="/agricole#contact" className="hover:text-white transition-colors">Contactez-nous</a></li>
+              <li><a href="/agricole#contact-form" className="hover:text-white transition-colors">Contactez-nous</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Livraison & Retours</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Garantie & SAV</a></li>
               <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>

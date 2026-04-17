@@ -166,7 +166,14 @@ export function Catalog() {
               ))}
             </div>
           ) : productsData?.products.length === 0 ? (
-            <div className="text-center py-24 px-4 bg-zinc-50 rounded-2xl">
+            <div className="text-center py-12 px-4 bg-zinc-50 rounded-2xl overflow-hidden">
+              <div className="w-full max-w-md mx-auto mb-8 rounded-[2rem] overflow-hidden shadow-lg shadow-zinc-900/5">
+                <img
+                  src="https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=1200&q=80"
+                  alt="Accessoires"
+                  className="w-full h-56 object-cover"
+                />
+              </div>
               <Search className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-zinc-900 mb-2">Aucun produit trouv&eacute;</h3>
               <p className="text-zinc-500 mb-6">Nous n'avons trouv&eacute; aucun produit correspondant &agrave; votre recherche.</p>

@@ -9,6 +9,7 @@ type AgriculturalContactFormProps = {
   title?: string;
   description?: string;
   compact?: boolean;
+  anchorId?: string;
 };
 
 const styles = {
@@ -49,6 +50,7 @@ export function AgriculturalContactForm({
   title = "Démarrer une collaboration",
   description,
   compact = false,
+  anchorId,
 }: AgriculturalContactFormProps) {
   const [form, setForm] = useState({ nom: "", email: "", message: "" });
   const [sent, setSent] = useState(false);
@@ -76,7 +78,10 @@ export function AgriculturalContactForm({
   }
 
   return (
-    <div className={cn("rounded-[2rem] p-8 md:p-10 shadow-2xl relative overflow-hidden", ui.card)}>
+    <div
+      id={anchorId}
+      className={cn("rounded-[2rem] p-8 md:p-10 shadow-2xl relative overflow-hidden scroll-mt-28", ui.card)}
+    >
       {sent ? (
         <div className={cn("text-center flex flex-col items-center justify-center", compact ? "py-8" : "py-12")}>
           <div className={cn("w-20 h-20 rounded-full flex items-center justify-center mb-6", ui.successIcon)}>

@@ -16,8 +16,9 @@ import {
   useDeleteAgriculturalInquiry,
   type AgriculturalPortfolioItem,
 } from "@/lib/api-client";
+import { useRef } from "react";
 import { formatPrice, cn } from "@/lib/utils";
-import { Edit2, Trash2, Plus, X, Image as ImageIcon, Package, Tags, Boxes, ShoppingCart, Save } from "lucide-react";
+import { Edit2, Trash2, Plus, X, Package, Tags, Boxes, ShoppingCart, Save } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,8 +38,8 @@ const productSchema = z.object({
   imageUrl: z
     .string()
     .trim()
-    .refine((value) => value === "" || value.startsWith("/") || /^https?:\/\//i.test(value), {
-      message: "Entrez une URL web ou un chemin local commençant par /",
+    .refine((value) => value === "" || value.startsWith("/") || /^https?:\/\//i.test(value) || /^data:image\//i.test(value), {
+      message: "Entrez une URL web, un chemin local commençant par / ou choisissez une image",
     })
     .optional(),
   brand: z.string().optional(),
@@ -116,6 +117,7 @@ export function Admin() {
   const [portfolioDrafts, setPortfolioDrafts] = useState<Record<string, AgriculturalPortfolioItem>>({});
   const [pendingPortfolioId, setPendingPortfolioId] = useState<string | null>(null);
   const [pendingInquiryId, setPendingInquiryId] = useState<string | null>(null);
+  const productImageInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!agriculturalPortfolioItems) return;
@@ -130,6 +132,7 @@ export function Admin() {
     register,
     handleSubmit,
     reset,
+    setValue,
     watch,
     formState: { errors },
   } = useForm<ProductForm>({
@@ -171,6 +174,7 @@ export function Admin() {
   const openCreate = () => {
     setEditingId(null);
     reset({ name: "", price: 0, categoryId: "", stock: 10, description: "", imageUrl: "", brand: "", isFeatured: false });
+    if (productImageInputRef.current) productImageInputRef.current.value = "";
     setIsModalOpen(true);
   };
 
@@ -186,6 +190,7 @@ export function Admin() {
       brand: product.brand || "",
       isFeatured: product.isFeatured,
     });
+    if (productImageInputRef.current) productImageInputRef.current.value = "";
     setIsModalOpen(true);
   };
 
@@ -202,9 +207,42 @@ export function Admin() {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       setIsModalOpen(false);
+      if (productImageInputRef.current) productImageInputRef.current.value = "";
     } catch {
       toast({ title: "Erreur", variant: "destructive" });
     }
+  };
+
+  const handleProductImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Format invalide", description: "Choisissez uniquement une image.", variant: "destructive" });
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+      toast({
+        title: "Image trop lourde",
+        description: "Choisissez une image de moins de 3 Mo pour garder un site rapide.",
+        variant: "destructive",
+      });
+      event.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      setValue("imageUrl", result, { shouldDirty: true, shouldValidate: true });
+      toast({ title: "Image ajoutée", description: "L'aperçu du produit a été mis à jour." });
+    };
+    reader.onerror = () => {
+      toast({ title: "Erreur", description: "Impossible de lire cette image.", variant: "destructive" });
+    };
+    reader.readAsDataURL(file);
   };
 
   const onSubmitAgriculturalContact = async (data: AgriculturalContactForm) => {
@@ -315,6 +353,13 @@ export function Admin() {
   ];
 
   const featuredValue = watch("isFeatured");
+  const imageValue = watch("imageUrl");
+  const productPreviewImage = getProductImage({
+    imageUrl: imageValue,
+    categoryName: "",
+    brand: watch("brand"),
+    name: watch("name"),
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
@@ -405,7 +450,7 @@ export function Admin() {
         <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-zinc-50 text-xs tracking-widest uppercase text-zinc-500 font-medium"><tr><th className="px-6 py-4">Produit</th><th className="px-6 py-4">Catégorie</th><th className="px-6 py-4">Prix</th><th className="px-6 py-4">Stock</th><th className="px-6 py-4">Sélection</th><th className="px-6 py-4 text-right">Actions</th></tr></thead><tbody className="divide-y divide-zinc-100">{isLoading ? <tr><td colSpan={6} className="px-6 py-8 text-center text-zinc-500">Chargement...</td></tr> : productsData?.products.map((product) => (<tr key={product.id} className="hover:bg-zinc-50/50 transition-colors"><td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded bg-zinc-100 overflow-hidden flex items-center justify-center flex-shrink-0 border border-zinc-200/60"><img src={getProductImage(product)} alt={product.name} className="w-full h-full object-cover" /></div><div><span className="font-medium text-zinc-900 block">{product.name}</span><span className="text-xs text-zinc-400">{product.brand || product.sku}</span></div></div></td><td className="px-6 py-4 text-zinc-600">{product.categoryName}</td><td className="px-6 py-4 font-medium">{formatPrice(product.price)}</td><td className="px-6 py-4"><span className={cn("px-2 py-1 rounded-full text-[10px] font-medium tracking-wider uppercase", product.stock > 10 ? "bg-green-100 text-green-700" : product.stock > 0 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700")}>{product.stock}</span></td><td className="px-6 py-4"><label className="inline-flex items-center gap-3 cursor-pointer"><input type="checkbox" className="h-5 w-5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900" checked={product.isFeatured} disabled={pendingProductId === product.id} onChange={(event) => handleProductFeaturedToggle(product.id, event.target.checked)} /><span className={cn("text-xs font-medium", product.isFeatured ? "text-green-600" : "text-zinc-400")}>{product.isFeatured ? "Activé" : "Inactif"}</span></label></td><td className="px-6 py-4 text-right space-x-2"><button onClick={() => openEdit(product)} className="p-2 text-zinc-400 hover:text-zinc-900 transition-colors bg-white rounded-md shadow-sm border border-zinc-200"><Edit2 className="w-4 h-4" /></button><button onClick={() => handleDelete(product.id)} className="p-2 text-zinc-400 hover:text-red-500 transition-colors bg-white rounded-md shadow-sm border border-zinc-200"><Trash2 className="w-4 h-4" /></button></td></tr>))}</tbody></table></div>
       </div>
 
-      {isModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"><div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div><div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"><div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50"><h2 className="font-display font-medium text-lg text-zinc-900">{editingId ? "Modifier le produit" : "Nouveau produit"}</h2><button onClick={() => setIsModalOpen(false)} className="text-zinc-400 hover:text-zinc-900"><X className="w-5 h-5" /></button></div><div className="p-6 overflow-y-auto flex-1 custom-scrollbar"><form id="product-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5"><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Nom du produit</label><input {...register("name")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 outline-none" />{errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}</div><div className="grid grid-cols-2 gap-4"><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Prix (EUR)</label><input type="number" step="0.01" {...register("price")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" />{errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}</div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Stock</label><input type="number" {...register("stock")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" />{errors.stock && <p className="text-red-500 text-xs mt-1">{errors.stock.message}</p>}</div></div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Catégorie</label><select {...register("categoryId")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none bg-white"><option value="">Sélectionner...</option>{categories?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>{errors.categoryId && <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>}</div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Image du produit (optionnel)</label><input {...register("imageUrl")} placeholder="/images/fer-a-repasser.jpeg ou https://..." className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" />{errors.imageUrl && <p className="text-red-500 text-xs mt-1">{errors.imageUrl.message}</p>}<p className="text-[11px] text-zinc-500 mt-1.5">Pour une image locale, ajoute le fichier dans <span className="font-medium">public/images</span> puis saisis par exemple <span className="font-medium">/images/fer-a-repasser.jpeg</span>.</p></div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Marque (optionnel)</label><input {...register("brand")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" /></div><label className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 cursor-pointer"><div><p className="text-sm font-medium text-zinc-900">Sélection du moment</p><p className="text-xs text-zinc-500 mt-1">Active ce produit pour l'afficher sur la page d'accueil.</p></div><input type="checkbox" {...register("isFeatured")} checked={featuredValue} className="h-5 w-5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900" /></label></form></div><div className="p-6 border-t border-zinc-100 bg-zinc-50 flex justify-end gap-3"><button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-zinc-600 hover:text-zinc-900 bg-white border border-zinc-200 rounded-lg shadow-sm hover:bg-zinc-50 transition-colors">Annuler</button><button type="submit" form="product-form" disabled={createProd.isPending || updateProd.isPending} className="px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 rounded-lg shadow-sm hover:bg-zinc-800 transition-colors disabled:opacity-50">{createProd.isPending || updateProd.isPending ? "Enregistrement..." : "Enregistrer"}</button></div></div></div>}
+      {isModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"><div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div><div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"><div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50"><h2 className="font-display font-medium text-lg text-zinc-900">{editingId ? "Modifier le produit" : "Nouveau produit"}</h2><button onClick={() => setIsModalOpen(false)} className="text-zinc-400 hover:text-zinc-900"><X className="w-5 h-5" /></button></div><div className="p-6 overflow-y-auto flex-1 custom-scrollbar"><form id="product-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5"><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Nom du produit</label><input {...register("name")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 outline-none" />{errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}</div><div className="grid grid-cols-2 gap-4"><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Prix (EUR)</label><input type="number" step="0.01" {...register("price")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" />{errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}</div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Stock</label><input type="number" {...register("stock")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" />{errors.stock && <p className="text-red-500 text-xs mt-1">{errors.stock.message}</p>}</div></div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Catégorie</label><select {...register("categoryId")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none bg-white"><option value="">Sélectionner...</option>{categories?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>{errors.categoryId && <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>}</div><div><div className="flex items-center justify-between mb-1.5"><label className="block text-xs font-medium text-zinc-700">Image du produit (optionnel)</label><button type="button" onClick={() => productImageInputRef.current?.click()} className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"><Plus className="w-3.5 h-3.5" /> Ajouter depuis la galerie</button></div><input ref={productImageInputRef} type="file" accept="image/*" className="hidden" onChange={handleProductImageSelect} /><div className="mb-3 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50"><img src={productPreviewImage} alt="Aperçu du produit" className="h-48 w-full object-cover" /></div><input {...register("imageUrl")} placeholder="/images/fer-a-repasser.jpeg ou https://..." className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" />{errors.imageUrl && <p className="text-red-500 text-xs mt-1">{errors.imageUrl.message}</p>}<p className="text-[11px] text-zinc-500 mt-1.5">Sur téléphone, le bouton + ouvre directement la galerie. Vous pouvez aussi garder une URL web, un chemin local dans <span className="font-medium">public/images</span>, ou l'image choisie depuis l'appareil.</p></div><div><label className="block text-xs font-medium text-zinc-700 mb-1.5">Marque (optionnel)</label><input {...register("brand")} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zinc-900/10 outline-none" /></div><label className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 cursor-pointer"><div><p className="text-sm font-medium text-zinc-900">Sélection du moment</p><p className="text-xs text-zinc-500 mt-1">Active ce produit pour l'afficher sur la page d'accueil.</p></div><input type="checkbox" {...register("isFeatured")} checked={featuredValue} className="h-5 w-5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900" /></label></form></div><div className="p-6 border-t border-zinc-100 bg-zinc-50 flex justify-end gap-3"><button type="button" onClick={() => { setIsModalOpen(false); if (productImageInputRef.current) productImageInputRef.current.value = ""; }} className="px-5 py-2.5 text-sm font-medium text-zinc-600 hover:text-zinc-900 bg-white border border-zinc-200 rounded-lg shadow-sm hover:bg-zinc-50 transition-colors">Annuler</button><button type="submit" form="product-form" disabled={createProd.isPending || updateProd.isPending} className="px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 rounded-lg shadow-sm hover:bg-zinc-800 transition-colors disabled:opacity-50">{createProd.isPending || updateProd.isPending ? "Enregistrement..." : "Enregistrer"}</button></div></div></div>}
     </div>
   );
 }

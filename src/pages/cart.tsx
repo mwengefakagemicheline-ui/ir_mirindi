@@ -1,7 +1,7 @@
 ﻿import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/utils";
 import { Link } from "wouter";
-import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ShieldCheck } from "lucide-react";
+import { Minus, Plus, Trash2, ArrowRight, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { getProductImage } from "@/lib/image-fallbacks";
 
