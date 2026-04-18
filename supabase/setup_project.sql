@@ -243,6 +243,8 @@ create table if not exists agricultural_inquiries (
   name text not null,
   email text not null,
   message text not null,
+  reply_message text,
+  replied_at timestamptz,
   created_at timestamptz default now()
 );
 

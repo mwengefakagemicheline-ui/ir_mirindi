@@ -71,6 +71,8 @@ export type AgriculturalInquiry = {
   name: string;
   email: string;
   message: string;
+  replyMessage?: string | null;
+  repliedAt?: string | null;
   createdAt: string;
 };
 
@@ -210,6 +212,8 @@ function mapAgriculturalInquiry(row: any): AgriculturalInquiry {
     name: row.name,
     email: row.email,
     message: row.message,
+    replyMessage: row.reply_message ?? null,
+    repliedAt: row.replied_at ?? null,
     createdAt: row.created_at,
   };
 }
@@ -423,8 +427,18 @@ export function useToggleProductFeatured() {
 export function useDeleteProduct() {
   return useMutation({
     mutationFn: async (payload: { id: string }) => {
-      const { error } = await supabase.from("products").delete().eq("id", payload.id);
+      const { data, error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", payload.id)
+        .select("id")
+        .maybeSingle();
+
       if (error) throw error;
+      if (!data?.id) {
+        throw new Error("Suppression refusée: aucun produit n'a été supprimé. Vérifiez les permissions Supabase.");
+      }
+
       return true;
     },
   });
@@ -589,7 +603,7 @@ export function useCreateAgriculturalInquiry() {
           email: payload.email,
           message: payload.message,
         })
-        .select("id, name, email, message, created_at")
+        .select("id, name, email, message, reply_message, replied_at, created_at")
         .single();
 
       if (error) throw error;
@@ -604,7 +618,7 @@ export function useListAgriculturalInquiries(limit: number = 12) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("agricultural_inquiries")
-        .select("id, name, email, message, created_at")
+        .select("id, name, email, message, reply_message, replied_at, created_at")
         .order("created_at", { ascending: false })
         .limit(limit);
 
@@ -614,11 +628,41 @@ export function useListAgriculturalInquiries(limit: number = 12) {
   });
 }
 
+export function useUpdateAgriculturalInquiryReply() {
+  return useMutation({
+    mutationFn: async (payload: { id: string; replyMessage: string }) => {
+      const reply = payload.replyMessage.trim();
+      const { data, error } = await supabase
+        .from("agricultural_inquiries")
+        .update({
+          reply_message: reply,
+          replied_at: reply ? new Date().toISOString() : null,
+        })
+        .eq("id", payload.id)
+        .select("id, name, email, message, reply_message, replied_at, created_at")
+        .single();
+
+      if (error) throw error;
+      return mapAgriculturalInquiry(data);
+    },
+  });
+}
+
 export function useDeleteAgriculturalInquiry() {
   return useMutation({
     mutationFn: async (payload: { id: string }) => {
-      const { error } = await supabase.from("agricultural_inquiries").delete().eq("id", payload.id);
+      const { data, error } = await supabase
+        .from("agricultural_inquiries")
+        .delete()
+        .eq("id", payload.id)
+        .select("id")
+        .maybeSingle();
+
       if (error) throw error;
+      if (!data?.id) {
+        throw new Error("Suppression refusée: aucun message n'a été supprimé. Vérifiez les policies Supabase.");
+      }
+
       return true;
     },
   });
