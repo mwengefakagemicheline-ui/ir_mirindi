@@ -76,6 +76,13 @@ export type AgriculturalInquiry = {
   createdAt: string;
 };
 
+export type SendInquiryReplyEmailPayload = {
+  toEmail: string;
+  toName?: string;
+  replyMessage: string;
+  originalMessage?: string;
+};
+
 const defaultAgriculturalContactSettings: AgriculturalContactSettings = {
   locationLabel: "Notre agence",
   locationValue: "République démocratique du Congo, Minova centre commercial, en face de l'hôtel Luna",
@@ -216,6 +223,32 @@ function mapAgriculturalInquiry(row: any): AgriculturalInquiry {
     repliedAt: row.replied_at ?? null,
     createdAt: row.created_at,
   };
+}
+
+export async function sendInquiryReplyEmail(payload: SendInquiryReplyEmailPayload) {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
+
+  const token = data.session?.access_token;
+  if (!token) {
+    throw new Error("Vous devez être connecté en admin pour envoyer un email.");
+  }
+
+  const response = await fetch("/api/send-inquiry-reply", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const result = (await response.json().catch(() => null)) as { message?: string } | null;
+  if (!response.ok) {
+    throw new Error(result?.message || "Impossible d'envoyer l'email de réponse.");
+  }
+
+  return true;
 }
 
 export function useListCategories() {
@@ -427,18 +460,12 @@ export function useToggleProductFeatured() {
 export function useDeleteProduct() {
   return useMutation({
     mutationFn: async (payload: { id: string }) => {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("products")
         .delete()
-        .eq("id", payload.id)
-        .select("id")
-        .maybeSingle();
+        .eq("id", payload.id);
 
       if (error) throw error;
-      if (!data?.id) {
-        throw new Error("Suppression refusée: aucun produit n'a été supprimé. Vérifiez les permissions Supabase.");
-      }
-
       return true;
     },
   });
@@ -632,18 +659,34 @@ export function useUpdateAgriculturalInquiryReply() {
   return useMutation({
     mutationFn: async (payload: { id: string; replyMessage: string }) => {
       const reply = payload.replyMessage.trim();
+      const repliedAt = reply ? new Date().toISOString() : null;
       const { data, error } = await supabase
         .from("agricultural_inquiries")
         .update({
           reply_message: reply,
-          replied_at: reply ? new Date().toISOString() : null,
+          replied_at: repliedAt,
         })
         .eq("id", payload.id)
         .select("id, name, email, message, reply_message, replied_at, created_at")
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      return mapAgriculturalInquiry(data);
+      if (data) {
+        return mapAgriculturalInquiry(data);
+      }
+
+      const { data: refreshed, error: refreshError } = await supabase
+        .from("agricultural_inquiries")
+        .select("id, name, email, message, reply_message, replied_at, created_at")
+        .eq("id", payload.id)
+        .maybeSingle();
+
+      if (refreshError) throw refreshError;
+      if (!refreshed) {
+        throw new Error("La réponse a été enregistrée, mais le message mis à jour n'a pas pu être relu.");
+      }
+
+      return mapAgriculturalInquiry(refreshed);
     },
   });
 }
@@ -651,18 +694,12 @@ export function useUpdateAgriculturalInquiryReply() {
 export function useDeleteAgriculturalInquiry() {
   return useMutation({
     mutationFn: async (payload: { id: string }) => {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("agricultural_inquiries")
         .delete()
-        .eq("id", payload.id)
-        .select("id")
-        .maybeSingle();
+        .eq("id", payload.id);
 
       if (error) throw error;
-      if (!data?.id) {
-        throw new Error("Suppression refusée: aucun message n'a été supprimé. Vérifiez les policies Supabase.");
-      }
-
       return true;
     },
   });

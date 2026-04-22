@@ -15,6 +15,7 @@ import {
   useListAgriculturalInquiries,
   useDeleteAgriculturalInquiry,
   useUpdateAgriculturalInquiryReply,
+  sendInquiryReplyEmail,
   type AgriculturalInquiry,
   type AgriculturalPortfolioItem,
 } from "@/lib/api-client";
@@ -374,10 +375,27 @@ export function Admin() {
 
   const handleSaveInquiryReply = async (id: string) => {
     try {
+      const inquiry = agriculturalInquiries?.find((item) => item.id === id);
+      if (!inquiry) {
+        throw new Error("Message introuvable.");
+      }
+
+      const replyMessage = (inquiryReplies[id] ?? "").trim();
+      if (!replyMessage) {
+        throw new Error("Ajoutez une réponse avant l'envoi.");
+      }
+
       setPendingInquiryId(id);
+      await sendInquiryReplyEmail({
+        toEmail: inquiry.email,
+        toName: inquiry.name,
+        replyMessage,
+        originalMessage: inquiry.message,
+      });
+
       const updated = await updateAgriculturalInquiryReply.mutateAsync({
         id,
-        replyMessage: inquiryReplies[id] ?? "",
+        replyMessage,
       });
       queryClient.setQueriesData(
         { queryKey: ["agricultural-inquiries"] },
@@ -385,11 +403,11 @@ export function Admin() {
           current ? current.map((item) => (item.id === id ? updated : item)) : current
       );
       queryClient.invalidateQueries({ queryKey: ["agricultural-inquiries"] });
-      toast({ title: "Réponse enregistrée" });
+      toast({ title: "Réponse envoyée par email" });
     } catch (error: any) {
       toast({
         title: "Erreur",
-        description: error?.message || "Impossible d'enregistrer cette réponse.",
+        description: error?.message || "Impossible d'envoyer cette réponse.",
         variant: "destructive",
       });
     } finally {
