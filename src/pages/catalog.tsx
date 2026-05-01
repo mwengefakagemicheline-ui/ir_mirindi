@@ -123,23 +123,6 @@ export function Catalog() {
               </ul>
             </div>
 
-            <div>
-              <h3 className="text-xs font-medium tracking-widest uppercase text-zinc-900 mb-5">Prix</h3>
-              <div className="space-y-4">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="w-4 h-4 rounded border border-zinc-300 flex items-center justify-center group-hover:border-zinc-900 transition-colors"></div>
-                  <span className="text-[13px] text-zinc-600 group-hover:text-zinc-900 transition-colors">Moins de 50 $</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="w-4 h-4 rounded border border-zinc-300 flex items-center justify-center group-hover:border-zinc-900 transition-colors"></div>
-                  <span className="text-[13px] text-zinc-600 group-hover:text-zinc-900 transition-colors">50 $ - 150 $</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="w-4 h-4 rounded border border-zinc-300 flex items-center justify-center group-hover:border-zinc-900 transition-colors"></div>
-                  <span className="text-[13px] text-zinc-600 group-hover:text-zinc-900 transition-colors">Plus de 150 $</span>
-                </label>
-              </div>
-            </div>
           </div>
         </div>
 

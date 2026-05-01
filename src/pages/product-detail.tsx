@@ -1,7 +1,7 @@
 ﻿import { useParams, Link } from "wouter";
 import { useGetProduct } from "@/lib/api-client";
 import { useCart } from "@/lib/cart-context";
-import { formatPrice } from "@/lib/utils";
+import { formatUnknownPrice } from "@/lib/utils";
 import { useState } from "react";
 import { Minus, Plus, ShoppingBag, Truck, ShieldCheck, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -94,13 +94,8 @@ export function ProductDetail() {
 
           <div className="flex items-center gap-4 mb-8">
             <span className="text-2xl font-medium text-zinc-900">
-              {formatPrice(product.promoPrice || product.price)}
+              {formatUnknownPrice()}
             </span>
-            {product.isPromo && product.promoPrice && (
-              <span className="text-lg text-zinc-400 line-through">
-                {formatPrice(product.price)}
-              </span>
-            )}
           </div>
 
           <div className="prose prose-sm text-zinc-600 mb-10 leading-relaxed">

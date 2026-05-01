@@ -17,45 +17,45 @@ const fadeUp = {
 
 const cultures = [
   {
-    name: "Maïs",
+    name: "Maï¿½s",
     saison: "Avril â€“ Sept.",
     image: "https://images.unsplash.com/photo-1601493700631-2b16ec4b4716?w=800&q=80",
-    conseils: ["Semis à 25 000 plants/ha", "Apport azoté fractionné", "Désherbage précoce"],
+    conseils: ["Semis ï¿½ 25 000 plants/ha", "Apport azotï¿½ fractionnï¿½", "Dï¿½sherbage prï¿½coce"],
     colSpan: "col-span-1 md:col-span-4",
   },
   {
     name: "Haricot",
     saison: "Mars â€“ Juil.",
     image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80",
-    conseils: ["Inoculation rhizobium", "Espacement 40Ã—10 cm", "Ã‰viter excès d'eau"],
+    conseils: ["Inoculation rhizobium", "Espacement 40Ã—10 cm", "Ã‰viter excï¿½s d'eau"],
     colSpan: "col-span-1 md:col-span-2",
   },
   {
     name: "Manioc",
-    saison: "Toute l'année",
+    saison: "Toute l'annï¿½e",
     image: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&q=80",
-    conseils: ["Boutures saines 25 cm", "Sol bien drainé", "Buttage à 3 mois"],
+    conseils: ["Boutures saines 25 cm", "Sol bien drainï¿½", "Buttage ï¿½ 3 mois"],
     colSpan: "col-span-1 md:col-span-2",
   },
   {
     name: "Tomate",
     saison: "Jan. â€“ Juin",
     image: "https://images.unsplash.com/photo-1592841200221-a6898f307baa?w=800&q=80",
-    conseils: ["Tuteurage dès 30 cm", "Arrosage au pied", "Fongicide préventif"],
+    conseils: ["Tuteurage dï¿½s 30 cm", "Arrosage au pied", "Fongicide prï¿½ventif"],
     colSpan: "col-span-1 md:col-span-4",
   },
   {
     name: "Riz",
     saison: "Juin â€“ Nov.",
     image: "https://images.unsplash.com/photo-1536304929831-ee1ca9d44906?w=800&q=80",
-    conseils: ["Repiquage en ligne", "Gestion de l'eau", "Récolte à maturité"],
+    conseils: ["Repiquage en ligne", "Gestion de l'eau", "Rï¿½colte ï¿½ maturitï¿½"],
     colSpan: "col-span-1 md:col-span-3",
   },
   {
     name: "Soja",
     saison: "Mai â€“ Oct.",
     image: "https://images.unsplash.com/photo-1566218246241-934ad8b38b3b?w=800&q=80",
-    conseils: ["Inoculation", "Labour profond 25cm", "Récolte avant verse"],
+    conseils: ["Inoculation", "Labour profond 25cm", "Rï¿½colte avant verse"],
     colSpan: "col-span-1 md:col-span-3",
   },
 ];
@@ -64,22 +64,22 @@ const conseils = [
   {
     icon: <Leaf className="w-6 h-6" />,
     titre: "Gestion du sol",
-    texte: "Analysez votre sol chaque saison. Un pH entre 6 et 7 assure la disponibilité optimale des nutriments. Pratiquez la rotation des cultures pour maintenir la fertilité naturelle.",
+    texte: "Analysez votre sol chaque saison. Un pH entre 6 et 7 assure la disponibilitï¿½ optimale des nutriments. Pratiquez la rotation des cultures pour maintenir la fertilitï¿½ naturelle.",
   },
   {
     icon: <Droplets className="w-6 h-6" />,
     titre: "Irrigation intelligente",
-    texte: "Arrosez tôt le matin pour réduire l'évaporation. Adoptez le goutte-à-goutte pour économiser jusqu'à 60 % d'eau. Ã‰vitez les excès qui favorisent les maladies fongiques.",
+    texte: "Arrosez tï¿½t le matin pour rï¿½duire l'ï¿½vaporation. Adoptez le goutte-ï¿½-goutte pour ï¿½conomiser jusqu'ï¿½ 60 % d'eau. Ã‰vitez les excï¿½s qui favorisent les maladies fongiques.",
   },
   {
     icon: <Sun className="w-6 h-6" />,
     titre: "Protection phytosanitaire",
-    texte: "Inspectez vos cultures deux fois par semaine. Privilégiez la lutte intégrée avant les traitements chimiques. Traitez en soirée pour protéger les pollinisateurs.",
+    texte: "Inspectez vos cultures deux fois par semaine. Privilï¿½giez la lutte intï¿½grï¿½e avant les traitements chimiques. Traitez en soirï¿½e pour protï¿½ger les pollinisateurs.",
   },
   {
     icon: <Wind className="w-6 h-6" />,
-    titre: "Gestion post-récolte",
-    texte: "Séchez bien les grains avant stockage (humidité < 13 %). Utilisez des sacs hermétiques PICS pour éviter les insectes. Tenez un registre de vos stocks et ventes.",
+    titre: "Gestion post-rï¿½colte",
+    texte: "Sï¿½chez bien les grains avant stockage (humiditï¿½ < 13 %). Utilisez des sacs hermï¿½tiques PICS pour ï¿½viter les insectes. Tenez un registre de vos stocks et ventes.",
   },
 ];
 
@@ -87,7 +87,7 @@ const stats = [
   { valeur: "6+", label: "Cultures suivies" },
   { valeur: "500+", label: "Agriculteurs" },
   { valeur: "30 ans", label: "D'expertise" },
-  { valeur: "12", label: "Régions couvertes" },
+  { valeur: "12", label: "Rï¿½gions couvertes" },
 ];
 
 export function Agricole() {
@@ -96,10 +96,10 @@ export function Agricole() {
   const [sent, setSent] = useState(false);
 
   const faqs = [
-    { q: "Comment démarrer ma première saison de culture ?", r: "Commencez par analyser votre sol, choisissez des variétés adaptées à votre région, et planifiez votre calendrier cultural en fonction des pluies." },
-    { q: "Quelle est la meilleure période pour fertiliser ?", r: "Appliquez les engrais de fond avant le semis. Fractionnez l'azote : 1/3 au semis, 2/3 en couverture lors de la montaison." },
-    { q: "Comment lutter contre les ravageurs sans pesticides ?", r: "Utilisez des variétés résistantes, pratiquez la rotation, favorisez les auxiliaires naturels (coccinelles, guêpes parasites) et installez des pièges à phéromones." },
-    { q: "Quel rendement espérer pour le maïs ?", r: "Un agriculteur bien encadré peut atteindre 3 à 5 tonnes/ha. Avec irrigation et intrants optimisés, certaines variétés hybrides dépassent 7 t/ha." },
+    { q: "Comment dï¿½marrer ma premiï¿½re saison de culture ?", r: "Commencez par analyser votre sol, choisissez des variï¿½tï¿½s adaptï¿½es ï¿½ votre rï¿½gion, et planifiez votre calendrier cultural en fonction des pluies." },
+    { q: "Quelle est la meilleure pï¿½riode pour fertiliser ?", r: "Appliquez les engrais de fond avant le semis. Fractionnez l'azote : 1/3 au semis, 2/3 en couverture lors de la montaison." },
+    { q: "Comment lutter contre les ravageurs sans pesticides ?", r: "Utilisez des variï¿½tï¿½s rï¿½sistantes, pratiquez la rotation, favorisez les auxiliaires naturels (coccinelles, guï¿½pes parasites) et installez des piï¿½ges ï¿½ phï¿½romones." },
+    { q: "Quel rendement espï¿½rer pour le maï¿½s ?", r: "Un agriculteur bien encadrï¿½ peut atteindre 3 ï¿½ 5 tonnes/ha. Avec irrigation et intrants optimisï¿½s, certaines variï¿½tï¿½s hybrides dï¿½passent 7 t/ha." },
   ];
 
   function handleSubmit(e: React.FormEvent) {
@@ -132,7 +132,7 @@ export function Agricole() {
               variants={fadeUp}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-white text-xs font-medium tracking-wide mb-8"
             >
-              <span>ðŸŒ±</span> Agriculture de précision
+              <span>ðŸŒ±</span> Agriculture de prï¿½cision
             </motion.div>
 
             <motion.h1
@@ -149,7 +149,7 @@ export function Agricole() {
               variants={fadeUp}
               className="text-white/60 text-lg md:text-xl font-light mb-10 max-w-xl"
             >
-              L'agronomie de précision pour maximiser vos parcelles.
+              L'agronomie de prï¿½cision pour maximiser vos parcelles.
             </motion.p>
 
             <motion.div custom={3} variants={fadeUp} className="flex flex-wrap items-center gap-5">
@@ -217,12 +217,12 @@ export function Agricole() {
           <div className="max-w-2xl">
             <span className="text-[#4ade80] text-sm font-bold tracking-[0.2em] uppercase mb-4 block">Portefeuille Agronomique</span>
             <h2 className="text-4xl md:text-5xl font-display font-semibold text-zinc-900 leading-tight">
-              Des itinéraires techniques <br className="hidden md:block" />
-              <span className="text-zinc-400">éprouvés sur le terrain.</span>
+              Des itinï¿½raires techniques <br className="hidden md:block" />
+              <span className="text-zinc-400">ï¿½prouvï¿½s sur le terrain.</span>
             </h2>
           </div>
           <p className="text-zinc-500 max-w-sm text-sm md:text-base leading-relaxed">
-            Parcourez nos fiches cultures pour découvrir les meilleures pratiques adaptées à chaque variété, saison et type de sol.
+            Parcourez nos fiches cultures pour dï¿½couvrir les meilleures pratiques adaptï¿½es ï¿½ chaque variï¿½tï¿½, saison et type de sol.
           </p>
         </motion.div>
 
@@ -288,17 +288,17 @@ export function Agricole() {
               { 
                 icon: <Microscope className="w-8 h-8 text-green-600" />, 
                 title: "Analyse du sol", 
-                desc: "Cartographie de la fertilité pour des apports précis et économiques." 
+                desc: "Cartographie de la fertilitï¿½ pour des apports prï¿½cis et ï¿½conomiques." 
               },
               { 
                 icon: <Sprout className="w-8 h-8 text-green-600" />, 
-                title: "Semences certifiées", 
-                desc: "Sélection de variétés à haut potentiel de rendement et résilientes." 
+                title: "Semences certifiï¿½es", 
+                desc: "Sï¿½lection de variï¿½tï¿½s ï¿½ haut potentiel de rendement et rï¿½silientes." 
               },
               { 
                 icon: <LineChart className="w-8 h-8 text-green-600" />, 
                 title: "Suivi agronomique", 
-                desc: "Surveillance de la croissance et ajustement continu des itinéraires." 
+                desc: "Surveillance de la croissance et ajustement continu des itinï¿½raires." 
               },
             ].map((item, i) => (
               <motion.div 
@@ -346,7 +346,7 @@ export function Agricole() {
                 transition={{ delay: i * 0.1 }}
                 className="relative bg-zinc-900/50 border border-zinc-800 rounded-3xl p-8 lg:p-10 overflow-hidden group hover:border-zinc-700 transition-colors"
               >
-                {/* Grand Numéro de fond */}
+                {/* Grand Numï¿½ro de fond */}
                 <div className="absolute -right-8 -top-12 text-[150px] font-display font-bold text-zinc-800/30 select-none pointer-events-none group-hover:text-zinc-800/50 transition-colors">
                   0{i + 1}
                 </div>
@@ -378,8 +378,8 @@ export function Agricole() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 text-center">
             {[
-              { val: "92%", text: "Récoltes améliorées" },
-              { val: "8 ans", text: "Expérience" },
+              { val: "92%", text: "Rï¿½coltes amï¿½liorï¿½es" },
+              { val: "8 ans", text: "Expï¿½rience" },
               { val: "1 200+", text: "Agriculteurs" },
               { val: "24h", text: "Support" },
             ].map((stat, i) => (
@@ -405,10 +405,10 @@ export function Agricole() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-display font-semibold text-zinc-900 mb-6">
-              Expertise & Réponses
+              Expertise & Rï¿½ponses
             </h2>
             <p className="text-zinc-500 max-w-xl mx-auto">
-              Des réponses claires à vos questions les plus fréquentes sur la conduite de vos cultures et l'optimisation de vos rendements.
+              Des rï¿½ponses claires ï¿½ vos questions les plus frï¿½quentes sur la conduite de vos cultures et l'optimisation de vos rendements.
             </p>
           </div>
 
@@ -479,17 +479,17 @@ export function Agricole() {
               viewport={{ once: true }}
             >
               <h2 className="text-5xl font-display font-semibold text-white mb-6">
-                Prêt à optimiser <br />
+                Prï¿½t ï¿½ optimiser <br />
                 <span className="text-[#4ade80]">votre exploitation ?</span>
               </h2>
               <p className="text-zinc-300 text-lg leading-relaxed mb-12 max-w-lg">
-                Ã‰changeons sur vos défis agronomiques. Nos experts vous accompagnent pour construire un itinéraire technique performant.
+                Ã‰changeons sur vos dï¿½fis agronomiques. Nos experts vous accompagnent pour construire un itinï¿½raire technique performant.
               </p>
               
               <div className="space-y-6">
                 {[
-                  { icon: <MapPin className="w-6 h-6" />, label: "Notre agence", value: "Pôle Agtech, Innovation Valley" },
-                  { icon: <Phone className="w-6 h-6" />, label: "Ligne directe", value: "+33 1 23 45 67 89" },
+                  { icon: <MapPin className="w-6 h-6" />, label: "Notre agence", value: "Pï¿½le Agtech, Innovation Valley" },
+                  { icon: <Phone className="w-6 h-6" />, label: "Ligne directe", value: "+243 972492668" },
                   { icon: <Mail className="w-6 h-6" />, label: "Support expert", value: "agronomie@startup.co" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-6 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
@@ -529,9 +529,9 @@ export function Agricole() {
                     >
                       <CheckCircle2 className="w-12 h-12 text-green-500" />
                     </motion.div>
-                    <h3 className="text-3xl font-display font-semibold text-zinc-900 mb-4">Demande reçue</h3>
+                    <h3 className="text-3xl font-display font-semibold text-zinc-900 mb-4">Demande reï¿½ue</h3>
                     <p className="text-zinc-500 text-lg mb-8 max-w-xs mx-auto">
-                      Un de nos agronomes étudie votre demande et vous recontactera sous 24h.
+                      Un de nos agronomes ï¿½tudie votre demande et vous recontactera sous 24h.
                     </p>
                     <button 
                       onClick={() => setSent(false)} 
@@ -549,7 +549,7 @@ export function Agricole() {
                     onSubmit={handleSubmit} 
                     className="space-y-8"
                   >
-                    <h3 className="text-2xl font-display font-semibold text-zinc-900 mb-8">Démarrer une collaboration</h3>
+                    <h3 className="text-2xl font-display font-semibold text-zinc-900 mb-8">Dï¿½marrer une collaboration</h3>
                     
                     <div className="space-y-6">
                       <div className="relative">
@@ -596,13 +596,13 @@ export function Agricole() {
                           value={form.message}
                           onChange={(e) => setForm({ ...form, message: e.target.value })}
                           className="peer w-full border-b-2 border-zinc-200 bg-transparent px-0 py-3 text-lg text-zinc-900 placeholder-transparent focus:border-[#4ade80] focus:outline-none transition-colors resize-none"
-                          placeholder="Décrivez votre besoin"
+                          placeholder="Dï¿½crivez votre besoin"
                         />
                         <label 
                           htmlFor="message" 
                           className="absolute left-0 -top-3.5 text-sm text-zinc-500 transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-lg peer-focus:-top-3.5 peer-focus:text-sm peer-focus:text-[#4ade80] font-medium pointer-events-none"
                         >
-                          Détails de l'exploitation
+                          Dï¿½tails de l'exploitation
                         </label>
                       </div>
                     </div>

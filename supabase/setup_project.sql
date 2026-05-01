@@ -243,8 +243,10 @@ create table if not exists agricultural_inquiries (
   name text not null,
   email text not null,
   message text not null,
+  reply_subject text,
   reply_message text,
   replied_at timestamptz,
+  email_sent_at timestamptz,
   created_at timestamptz default now()
 );
 
@@ -255,6 +257,7 @@ alter table agricultural_inquiries enable row level security;
 
 drop policy if exists "Agricultural inquiries public insert" on agricultural_inquiries;
 drop policy if exists "Agricultural inquiries public read" on agricultural_inquiries;
+drop policy if exists "Agricultural inquiries public update" on agricultural_inquiries;
 drop policy if exists "Agricultural inquiries public delete" on agricultural_inquiries;
 
 create policy "Agricultural inquiries public insert"
@@ -262,6 +265,9 @@ on agricultural_inquiries for insert to public with check (true);
 
 create policy "Agricultural inquiries public read"
 on agricultural_inquiries for select to public using (true);
+
+create policy "Agricultural inquiries public update"
+on agricultural_inquiries for update to public using (true) with check (true);
 
 create policy "Agricultural inquiries public delete"
 on agricultural_inquiries for delete to public using (true);

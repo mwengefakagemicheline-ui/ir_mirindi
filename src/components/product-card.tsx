@@ -1,6 +1,6 @@
 ﻿import { Link } from "wouter";
 import { Product } from "@/lib/api-client";
-import { formatPrice } from "@/lib/utils";
+import { formatUnknownPrice } from "@/lib/utils";
 import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { toast } from "@/hooks/use-toast";
@@ -66,13 +66,8 @@ export function ProductCard({ product }: ProductCardProps) {
           </h3>
           <div className="flex flex-col items-end shrink-0">
             <p className="text-zinc-900 font-semibold text-sm">
-              {formatPrice(product.promoPrice || product.price)}
+              {formatUnknownPrice()}
             </p>
-            {product.isPromo && product.promoPrice && (
-              <p className="text-red-500 line-through text-[11px] font-medium mt-0.5">
-                {formatPrice(product.price)}
-              </p>
-            )}
           </div>
         </div>
       </div>

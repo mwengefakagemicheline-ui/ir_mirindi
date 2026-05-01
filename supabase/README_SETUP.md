@@ -30,6 +30,9 @@ Dans Supabase > Authentication > Users:
 - orders
 - order_items
 - cart_items
+- agricultural_contact_settings
+- agricultural_portfolio_items
+- agricultural_inquiries
 - fonction `decrement_stock(uuid, integer)`
 
 ## 6. Requetes utiles
@@ -37,6 +40,7 @@ select * from categories order by name;
 select * from products order by created_at desc;
 select * from orders order by created_at desc;
 select * from order_items order by created_at desc;
+select * from agricultural_inquiries order by created_at desc;
 
 ## 7. Important
 Si tu veux, je peux ensuite te durcir la securite RLS pour que seuls les admins ecrivent en base.

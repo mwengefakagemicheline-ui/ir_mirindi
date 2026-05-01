@@ -1,12 +1,12 @@
 ﻿import { useCart } from "@/lib/cart-context";
-import { formatPrice } from "@/lib/utils";
+import { formatUnknownPrice } from "@/lib/utils";
 import { Link } from "wouter";
 import { Minus, Plus, Trash2, ArrowRight, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { getProductImage } from "@/lib/image-fallbacks";
 
 export function Cart() {
-  const { items, updateQuantity, removeFromCart, totalPrice } = useCart();
+  const { items, updateQuantity, removeFromCart } = useCart();
 
   if (items.length === 0) {
     return (
@@ -64,7 +64,7 @@ export function Cart() {
                     <Link href={`/product/${item.id}`} className="font-medium text-zinc-900 hover:underline block mb-1 text-sm md:text-base">
                       {item.name}
                     </Link>
-                    <p className="text-zinc-500 text-sm mb-3">{formatPrice(item.promoPrice || item.price)}</p>
+                    <p className="text-zinc-500 text-sm mb-3">{formatUnknownPrice()}</p>
                     <button 
                       onClick={() => removeFromCart(item.id)}
                       className="text-xs text-zinc-400 hover:text-red-500 flex items-center gap-1 transition-colors"
@@ -99,7 +99,7 @@ export function Cart() {
                 <div className="col-span-3 w-full md:w-auto flex justify-between md:justify-end items-center">
                   <span className="md:hidden text-sm text-zinc-500">Sous-total</span>
                   <span className="font-medium text-zinc-900">
-                    {formatPrice((item.promoPrice || item.price) * item.quantity)}
+                    {formatUnknownPrice()}
                   </span>
                 </div>
               </motion.div>
@@ -115,7 +115,7 @@ export function Cart() {
             <div className="space-y-4 text-sm mb-6 border-b border-zinc-200 pb-6">
               <div className="flex justify-between">
                 <span className="text-zinc-500">Sous-total</span>
-                <span className="font-medium text-zinc-900">{formatPrice(totalPrice)}</span>
+                <span className="font-medium text-zinc-900">{formatUnknownPrice()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-zinc-500">Livraison</span>
@@ -125,7 +125,7 @@ export function Cart() {
             
             <div className="flex justify-between items-center mb-8">
               <span className="font-medium text-zinc-900">Total</span>
-              <span className="text-2xl font-display font-medium text-zinc-900">{formatPrice(totalPrice)}</span>
+              <span className="text-2xl font-display font-medium text-zinc-900">{formatUnknownPrice()}</span>
             </div>
 
             <Link 

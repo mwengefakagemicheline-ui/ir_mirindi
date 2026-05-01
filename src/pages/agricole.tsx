@@ -95,7 +95,7 @@ export function Agricole() {
     {
       icon: <Phone className="w-6 h-6" />,
       label: contactSettings?.phoneLabel ?? "Ligne directe",
-      value: contactSettings?.phoneValue ?? "+33 1 23 45 67 89",
+      value: contactSettings?.phoneValue ?? "+243 ",
     },
     {
       icon: <Mail className="w-6 h-6" />,

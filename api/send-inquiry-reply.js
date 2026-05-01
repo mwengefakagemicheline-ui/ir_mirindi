@@ -65,7 +65,7 @@ async function getAuthorizedUser(req) {
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-    return res.status(405).json({ message: "Méthode non autorisée." });
+    return res.status(405).json({ message: "Methode non autorisee." });
   }
 
   try {
@@ -83,17 +83,19 @@ export default async function handler(req, res) {
     const {
       toEmail = "",
       toName = "",
+      subject = "",
       replyMessage = "",
       originalMessage = "",
     } = req.body ?? {};
 
     const recipient = String(toEmail).trim();
     const recipientName = String(toName).trim();
+    const customSubject = String(subject).trim();
     const adminReply = String(replyMessage).trim();
     const inquiryMessage = String(originalMessage).trim();
 
     if (!recipient || !adminReply) {
-      return res.status(400).json({ message: "Destinataire ou réponse manquants." });
+      return res.status(400).json({ message: "Destinataire ou reponse manquants." });
     }
 
     const transporter = nodemailer.createTransport({
@@ -106,12 +108,12 @@ export default async function handler(req, res) {
 
     const companyName = getEnv("MAIL_FROM_NAME") || "IR MIRINDI Business";
     const replyTo = getEnv("MAIL_REPLY_TO") || smtpEmail;
-    const subject = `Réponse à votre demande - ${companyName}`;
+    const mailSubject = customSubject || `Reponse a votre demande - ${companyName}`;
 
     const html = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #18181b; max-width: 640px; margin: 0 auto;">
         <p>Bonjour${recipientName ? ` ${escapeHtml(recipientName)}` : ""},</p>
-        <p>Merci pour votre message. Voici notre réponse :</p>
+        <p>Merci pour votre message. Voici notre reponse :</p>
         <div style="margin: 24px 0; padding: 16px 20px; border-radius: 16px; background: #f4f4f5; border: 1px solid #e4e4e7;">
           ${formatMultilineHtml(adminReply)}
         </div>
@@ -128,12 +130,12 @@ export default async function handler(req, res) {
     const text = [
       `Bonjour${recipientName ? ` ${recipientName}` : ""},`,
       "",
-      "Merci pour votre message. Voici notre réponse :",
+      "Merci pour votre message. Voici notre reponse :",
       "",
       adminReply,
       inquiryMessage ? `\nVotre message initial :\n${inquiryMessage}` : "",
       "",
-      `Cordialement,`,
+      "Cordialement,",
       companyName,
     ]
       .filter(Boolean)
@@ -143,7 +145,7 @@ export default async function handler(req, res) {
       from: `"${companyName}" <${smtpEmail}>`,
       to: recipient,
       replyTo,
-      subject,
+      subject: mailSubject,
       text,
       html,
     });

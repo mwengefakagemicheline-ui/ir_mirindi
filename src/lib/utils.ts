@@ -12,4 +12,8 @@ export function formatPrice(price: number) {
   }).format(price);
 }
 
+export function formatUnknownPrice() {
+  return "Prix sur demande";
+}
+
 

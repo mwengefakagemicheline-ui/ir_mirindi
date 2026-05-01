@@ -1,7 +1,7 @@
 ﻿import { useParams, Link } from "wouter";
 import { useGetOrder } from "@/lib/api-client";
 import { CheckCircle2, ArrowRight } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
+import { formatUnknownPrice } from "@/lib/utils";
 
 export function OrderConfirmation() {
   const { id } = useParams<{ id: string }>();
@@ -45,14 +45,14 @@ export function OrderConfirmation() {
           {order.items.map((item, idx) => (
             <div key={idx} className="flex justify-between text-sm">
               <span className="text-zinc-600">{item.quantity}x {item.productName}</span>
-              <span className="font-medium text-zinc-900">{formatPrice(item.totalPrice)}</span>
+              <span className="font-medium text-zinc-900">{formatUnknownPrice()}</span>
             </div>
           ))}
         </div>
         
         <div className="flex justify-between items-center border-t border-zinc-200 pt-4">
           <span className="font-medium text-zinc-900">Total payé</span>
-          <span className="text-lg font-medium text-zinc-900">{formatPrice(order.total)}</span>
+          <span className="text-lg font-medium text-zinc-900">{formatUnknownPrice()}</span>
         </div>
 
         <div className="mt-8 pt-6 border-t border-zinc-200">

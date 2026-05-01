@@ -2,7 +2,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCart } from "@/lib/cart-context";
-import { formatPrice, cn } from "@/lib/utils";
+import { formatUnknownPrice, cn } from "@/lib/utils";
 import { useCreateOrder } from "@/lib/api-client";
 import { useLocation, Link } from "wouter";
 import { ChevronLeft, Lock } from "lucide-react";
@@ -20,7 +20,7 @@ const checkoutSchema = z.object({
 type CheckoutForm = z.infer<typeof checkoutSchema>;
 
 export function Checkout() {
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, clearCart } = useCart();
   const [, setLocation] = useLocation();
   const { mutateAsync: createOrder, isPending } = useCreateOrder();
 
@@ -173,7 +173,7 @@ export function Checkout() {
                   </div>
                   <div className="flex-1 flex flex-col justify-center">
                     <h4 className="text-sm font-medium text-zinc-900 line-clamp-1">{item.name}</h4>
-                    <p className="text-xs text-zinc-500 mt-0.5">{formatPrice((item.promoPrice || item.price) * item.quantity)}</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">{formatUnknownPrice()}</p>
                   </div>
                 </div>
               ))}
@@ -182,7 +182,7 @@ export function Checkout() {
             <div className="border-t border-zinc-200 pt-6 space-y-3 mb-6 text-sm">
               <div className="flex justify-between text-zinc-600">
                 <span>Sous-total</span>
-                <span>{formatPrice(totalPrice)}</span>
+                <span>{formatUnknownPrice()}</span>
               </div>
               <div className="flex justify-between text-zinc-600">
                 <span>Livraison</span>
@@ -192,7 +192,7 @@ export function Checkout() {
 
             <div className="border-t border-zinc-200 pt-6 mb-8 flex justify-between items-center">
               <span className="font-medium text-zinc-900">Total à payer</span>
-              <span className="text-2xl font-display font-medium text-zinc-900">{formatPrice(totalPrice)}</span>
+              <span className="text-2xl font-display font-medium text-zinc-900">{formatUnknownPrice()}</span>
             </div>
 
             <button

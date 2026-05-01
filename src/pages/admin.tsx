@@ -120,6 +120,7 @@ export function Admin() {
   const [pendingProductId, setPendingProductId] = useState<string | null>(null);
   const [portfolioDrafts, setPortfolioDrafts] = useState<Record<string, AgriculturalPortfolioItem>>({});
   const [inquiryReplies, setInquiryReplies] = useState<Record<string, string>>({});
+  const [inquirySubjects, setInquirySubjects] = useState<Record<string, string>>({});
   const [pendingPortfolioId, setPendingPortfolioId] = useState<string | null>(null);
   const [pendingInquiryId, setPendingInquiryId] = useState<string | null>(null);
   const productImageInputRef = useRef<HTMLInputElement | null>(null);
@@ -139,7 +140,12 @@ export function Admin() {
       acc[item.id] = item.replyMessage ?? "";
       return acc;
     }, {});
+    const nextSubjects = agriculturalInquiries.reduce<Record<string, string>>((acc, item) => {
+      acc[item.id] = item.replySubject ?? "Reponse a votre demande";
+      return acc;
+    }, {});
     setInquiryReplies(nextReplies);
+    setInquirySubjects(nextSubjects);
   }, [agriculturalInquiries]);
 
   const {
@@ -381,6 +387,7 @@ export function Admin() {
       }
 
       const replyMessage = (inquiryReplies[id] ?? "").trim();
+      const replySubject = (inquirySubjects[id] ?? "").trim();
       if (!replyMessage) {
         throw new Error("Ajoutez une réponse avant l'envoi.");
       }
@@ -389,13 +396,16 @@ export function Admin() {
       await sendInquiryReplyEmail({
         toEmail: inquiry.email,
         toName: inquiry.name,
+        subject: replySubject,
         replyMessage,
         originalMessage: inquiry.message,
       });
 
       const updated = await updateAgriculturalInquiryReply.mutateAsync({
         id,
+        replySubject,
         replyMessage,
+        emailSentAt: new Date().toISOString(),
       });
       queryClient.setQueriesData(
         { queryKey: ["agricultural-inquiries"] },
@@ -491,7 +501,7 @@ export function Admin() {
             <div className="px-6 py-5 border-b border-zinc-100"><h2 className="text-lg font-display font-medium text-zinc-900">Messages du site</h2><p className="text-sm text-zinc-500 mt-1">Demandes envoyées depuis le formulaire agricole.</p></div>
             <div className="divide-y divide-zinc-100">
               {loadingAgriculturalInquiries ? <p className="px-6 py-8 text-sm text-zinc-500">Chargement...</p> : agriculturalInquiries && agriculturalInquiries.length > 0 ? agriculturalInquiries.map((item) => (
-                <div key={item.id} className="px-6 py-4"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-zinc-900">{item.name}</p><p className="text-xs text-zinc-500 mt-1">{item.email}</p></div><div className="text-right"><p className="text-xs text-zinc-400">{formatDate(item.createdAt)}</p>{item.repliedAt && <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.15em] text-green-600">Répondu le {formatDate(item.repliedAt)}</p>}<button type="button" onClick={() => handleDeleteAgriculturalInquiry(item.id)} disabled={pendingInquiryId === item.id} className="mt-3 inline-flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">{pendingInquiryId === item.id ? "Suppression..." : "Supprimer"}</button></div></div><p className="text-sm text-zinc-600 mt-3 whitespace-pre-line">{item.message}</p><div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4"><label className="block text-xs font-medium uppercase tracking-[0.15em] text-zinc-500 mb-2">Réponse admin</label><textarea rows={4} value={inquiryReplies[item.id] ?? ""} onChange={(event) => setInquiryReplies((current) => ({ ...current, [item.id]: event.target.value }))} placeholder="Écrivez votre réponse ici..." className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 outline-none focus:ring-2 focus:ring-zinc-900/10 resize-y" /><div className="mt-3 flex items-center justify-end"><button type="button" onClick={() => handleSaveInquiryReply(item.id)} disabled={pendingInquiryId === item.id} className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-xs font-medium text-white hover:bg-zinc-800 disabled:opacity-50">{pendingInquiryId === item.id ? "Enregistrement..." : "Envoyer la réponse"}</button></div></div></div>
+                <div key={item.id} className="px-6 py-4"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-zinc-900">{item.name}</p><p className="text-xs text-zinc-500 mt-1">{item.email}</p></div><div className="text-right"><p className="text-xs text-zinc-400">{formatDate(item.createdAt)}</p>{item.repliedAt && <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.15em] text-green-600">Répondu le {formatDate(item.repliedAt)}</p>}{item.emailSentAt && <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.15em] text-blue-600">Email envoyé le {formatDate(item.emailSentAt)}</p>}<button type="button" onClick={() => handleDeleteAgriculturalInquiry(item.id)} disabled={pendingInquiryId === item.id} className="mt-3 inline-flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">{pendingInquiryId === item.id ? "Suppression..." : "Supprimer"}</button></div></div><p className="text-sm text-zinc-600 mt-3 whitespace-pre-line">{item.message}</p><div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-xs font-medium uppercase tracking-[0.15em] text-zinc-500 mb-3">Répondre à : {item.email}</p><label className="block text-xs font-medium uppercase tracking-[0.15em] text-zinc-500 mb-2">Objet de l'email</label><input type="text" value={inquirySubjects[item.id] ?? ""} onChange={(event) => setInquirySubjects((current) => ({ ...current, [item.id]: event.target.value }))} placeholder="Reponse a votre demande" className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 outline-none focus:ring-2 focus:ring-zinc-900/10 mb-4" /><label className="block text-xs font-medium uppercase tracking-[0.15em] text-zinc-500 mb-2">Réponse admin</label><textarea rows={4} value={inquiryReplies[item.id] ?? ""} onChange={(event) => setInquiryReplies((current) => ({ ...current, [item.id]: event.target.value }))} placeholder="Écrivez votre réponse ici..." className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 outline-none focus:ring-2 focus:ring-zinc-900/10 resize-y" /><div className="mt-3 flex items-center justify-end"><button type="button" onClick={() => handleSaveInquiryReply(item.id)} disabled={pendingInquiryId === item.id} className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-xs font-medium text-white hover:bg-zinc-800 disabled:opacity-50">{pendingInquiryId === item.id ? "Enregistrement..." : "Envoyer la réponse"}</button></div></div></div>
               )) : <p className="px-6 py-8 text-sm text-zinc-500">Aucun message reçu pour le moment.</p>}
             </div>
           </div>

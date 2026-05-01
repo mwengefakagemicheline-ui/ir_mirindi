@@ -71,16 +71,25 @@ export type AgriculturalInquiry = {
   name: string;
   email: string;
   message: string;
+  replySubject?: string | null;
   replyMessage?: string | null;
   repliedAt?: string | null;
+  emailSentAt?: string | null;
   createdAt: string;
 };
 
 export type SendInquiryReplyEmailPayload = {
   toEmail: string;
   toName?: string;
+  subject?: string;
   replyMessage: string;
   originalMessage?: string;
+};
+
+export type SendAgriculturalInquiryPayload = {
+  name: string;
+  email: string;
+  message: string;
 };
 
 const defaultAgriculturalContactSettings: AgriculturalContactSettings = {
@@ -219,8 +228,10 @@ function mapAgriculturalInquiry(row: any): AgriculturalInquiry {
     name: row.name,
     email: row.email,
     message: row.message,
+    replySubject: row.reply_subject ?? null,
     replyMessage: row.reply_message ?? null,
     repliedAt: row.replied_at ?? null,
+    emailSentAt: row.email_sent_at ?? null,
     createdAt: row.created_at,
   };
 }
@@ -249,6 +260,34 @@ export async function sendInquiryReplyEmail(payload: SendInquiryReplyEmailPayloa
   }
 
   return true;
+}
+
+export async function sendAgriculturalInquiry(payload: SendAgriculturalInquiryPayload) {
+  const { data, error } = await supabase
+    .from("agricultural_inquiries")
+    .insert({
+      name: payload.name,
+      email: payload.email,
+      message: payload.message,
+    })
+    .select("id, name, email, message, created_at")
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Impossible d'envoyer votre demande.");
+  }
+
+  return {
+    id: data.id,
+    name: data.name,
+    email: data.email,
+    message: data.message,
+    replySubject: null,
+    replyMessage: null,
+    repliedAt: null,
+    emailSentAt: null,
+    createdAt: data.created_at,
+  } satisfies AgriculturalInquiry;
 }
 
 export function useListCategories() {
@@ -622,20 +661,7 @@ export function useListOrders(limit: number = 12) {
 
 export function useCreateAgriculturalInquiry() {
   return useMutation({
-    mutationFn: async (payload: { name: string; email: string; message: string }) => {
-      const { data, error } = await supabase
-        .from("agricultural_inquiries")
-        .insert({
-          name: payload.name,
-          email: payload.email,
-          message: payload.message,
-        })
-        .select("id, name, email, message, reply_message, replied_at, created_at")
-        .single();
-
-      if (error) throw error;
-      return mapAgriculturalInquiry(data);
-    },
+    mutationFn: sendAgriculturalInquiry,
   });
 }
 
@@ -645,7 +671,7 @@ export function useListAgriculturalInquiries(limit: number = 12) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("agricultural_inquiries")
-        .select("id, name, email, message, reply_message, replied_at, created_at")
+        .select("id, name, email, message, reply_subject, reply_message, replied_at, email_sent_at, created_at")
         .order("created_at", { ascending: false })
         .limit(limit);
 
@@ -657,17 +683,19 @@ export function useListAgriculturalInquiries(limit: number = 12) {
 
 export function useUpdateAgriculturalInquiryReply() {
   return useMutation({
-    mutationFn: async (payload: { id: string; replyMessage: string }) => {
+    mutationFn: async (payload: { id: string; replySubject?: string; replyMessage: string; emailSentAt?: string | null }) => {
       const reply = payload.replyMessage.trim();
       const repliedAt = reply ? new Date().toISOString() : null;
       const { data, error } = await supabase
         .from("agricultural_inquiries")
         .update({
+          reply_subject: payload.replySubject?.trim() || null,
           reply_message: reply,
           replied_at: repliedAt,
+          email_sent_at: payload.emailSentAt ?? null,
         })
         .eq("id", payload.id)
-        .select("id, name, email, message, reply_message, replied_at, created_at")
+        .select("id, name, email, message, reply_subject, reply_message, replied_at, email_sent_at, created_at")
         .maybeSingle();
 
       if (error) throw error;
@@ -677,7 +705,7 @@ export function useUpdateAgriculturalInquiryReply() {
 
       const { data: refreshed, error: refreshError } = await supabase
         .from("agricultural_inquiries")
-        .select("id, name, email, message, reply_message, replied_at, created_at")
+        .select("id, name, email, message, reply_subject, reply_message, replied_at, email_sent_at, created_at")
         .eq("id", payload.id)
         .maybeSingle();
 

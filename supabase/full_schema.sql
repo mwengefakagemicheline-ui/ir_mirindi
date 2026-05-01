@@ -112,12 +112,28 @@ create index if not exists idx_orders_status on orders(status);
 create index if not exists idx_order_items_order on order_items(order_id);
 create index if not exists idx_cart_items_user on cart_items(user_id);
 
+create table if not exists agricultural_inquiries (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  email text not null,
+  message text not null,
+  reply_subject text,
+  reply_message text,
+  replied_at timestamptz,
+  email_sent_at timestamptz,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_agricultural_inquiries_created_at
+  on agricultural_inquiries(created_at desc);
+
 -- RLS
 alter table categories enable row level security;
 alter table products enable row level security;
 alter table orders enable row level security;
 alter table order_items enable row level security;
 alter table cart_items enable row level security;
+alter table agricultural_inquiries enable row level security;
 
 -- Demo public policies
 -- Categories
@@ -185,5 +201,27 @@ create policy if not exists "Order items public insert"
   on order_items for insert
   to public
   with check (true);
+
+-- Agricultural inquiries
+create policy if not exists "Agricultural inquiries public insert"
+  on agricultural_inquiries for insert
+  to public
+  with check (true);
+
+create policy if not exists "Agricultural inquiries public read"
+  on agricultural_inquiries for select
+  to public
+  using (true);
+
+create policy if not exists "Agricultural inquiries public update"
+  on agricultural_inquiries for update
+  to public
+  using (true)
+  with check (true);
+
+create policy if not exists "Agricultural inquiries public delete"
+  on agricultural_inquiries for delete
+  to public
+  using (true);
 
 -- NOTE: cart_items still requires auth; keep as-is or open if needed.
