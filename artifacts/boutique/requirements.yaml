@@ -22,3 +22,7 @@ images:
 notes:
   - Expecting API to be accessible at /api as per openapi.yaml
   - React Query hooks are imported from @workspace/api-client-react
+
+
+
+
