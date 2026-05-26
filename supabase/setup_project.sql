@@ -74,8 +74,8 @@ create table if not exists cart_items (
 
 create table if not exists agricultural_contact_settings (
   id bigint primary key,
-  location_label text not null default 'Notre agence',
-  location_value text not null default 'République démocratique du Congo, Minova centre commercial, en face de l''hôtel Luna',
+  location_label text not null default 'Notre agence'
+  location_value text not null default 'République démocratique du Congo, Goma, Minova centre commercial, Kisangani,
   phone_label text not null default 'Ligne directe',
   phone_value text not null default '+243 972492668 & +243 971904750',
   email_label text not null default 'Support expert',
