@@ -90,7 +90,7 @@ export function Agricole() {
     {
       icon: <MapPin className="w-6 h-6" />,
       label: contactSettings?.locationLabel ?? "Notre agence",
-      value: contactSettings?.locationValue ?? "République démocratique du Congo, Minova centre commercial, en face de l'hôtel Luna",
+      value: contactSettings?.locationValue ?? "République démocratique du Congo, Goma, Minova et Kisangani",
     },
     {
       icon: <Phone className="w-6 h-6" />,

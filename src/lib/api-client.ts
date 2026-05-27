@@ -94,7 +94,7 @@ export type SendAgriculturalInquiryPayload = {
 
 const defaultAgriculturalContactSettings: AgriculturalContactSettings = {
   locationLabel: "Notre agence",
-  locationValue: "République démocratique du Congo, Minova centre commercial, en face de l'hôtel Luna",
+  locationValue: "République démocratique du Congo, Goma, Minova et Kisangani",
   phoneLabel: "Ligne directe",
   phoneValue: "+243 972492668 & +243 971904750",
   emailLabel: "Support expert",
